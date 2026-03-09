@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Location - Smart Metro Parking</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: #2563eb;
+            font-size: 24px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-email {
+            color: #374151;
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .title {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .title h2 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .title p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .locations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .location-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            position: relative;
+        }
+
+        .location-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .location-icon {
+            font-size: 48px;
+            color: #2563eb;
+            margin-bottom: 15px;
+        }
+
+        .location-name {
+            font-size: 22px;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 10px;
+        }
+
+        .location-desc {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .direction-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .direction-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .locations-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-parking"></i> Smart Metro Parking</h1>
+            <div class="user-info">
+                <span class="user-email" id="userEmail">Loading...</span>
+                <button class="logout-btn" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+
+        <div class="title">
+            <h2>Select Parking Location</h2>
+            <p>Choose your preferred parking location</p>
+        </div>
+
+        <div class="locations-grid">
+            <div class="location-card" onclick="selectLocation('rathinam_main_gate', 'Rathinam Main Gate')">
+                <div class="location-icon">
+                    <i class="fas fa-building"></i>
+                </div>
+                <div class="location-name">Rathinam Main Gate</div>
+                <div class="location-desc">Main entrance parking area</div>
+                <button class="direction-btn" onclick="event.stopPropagation(); openMainGate()">
+                    📍 Direction
+                </button>
+            </div>
+
+            <div class="location-card" onclick="selectLocation('rathinam_gate1', 'Rathinam Gate 1')">
+                <div class="location-icon">
+                    <i class="fas fa-door-open"></i>
+                </div>
+                <div class="location-name">Rathinam Gate 1</div>
+                <div class="location-desc">Gate 1 parking facility</div>
+                <button class="direction-btn" onclick="event.stopPropagation(); openGate1()">
+                    📍 Direction
+                </button>
+            </div>
+
+            <div class="location-card" onclick="selectLocation('rathinam_gate3', 'Rathinam Gate 3')">
+                <div class="location-icon">
+                    <i class="fas fa-warehouse"></i>
+                </div>
+                <div class="location-name">Rathinam Gate 3</div>
+                <div class="location-desc">Gate 3 parking zone</div>
+                <button class="direction-btn" onclick="event.stopPropagation(); openGate3()">
+                    📍 Direction
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="locations-script.js"></script>
+</body>
+</html>

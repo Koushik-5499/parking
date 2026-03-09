@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Setup - Smart Metro Parking</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #2563eb;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .info-box {
+            background: #f3f4f6;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .info-box h3 {
+            color: #374151;
+            margin-bottom: 10px;
+        }
+
+        .info-box p {
+            color: #6b7280;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .setup-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .option-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-group label {
+            color: #374151;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .option-group input {
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .log-container {
+            background: #1f2937;
+            color: #10b981;
+            padding: 20px;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .log-container.show {
+            display: block;
+        }
+
+        .log-line {
+            margin-bottom: 5px;
+        }
+
+        .log-success {
+            color: #10b981;
+        }
+
+        .log-error {
+            color: #ef4444;
+        }
+
+        .log-info {
+            color: #60a5fa;
+        }
+
+        .status {
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d1fae5;
+            color: #065f46;
+            display: block;
+        }
+
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Database Setup</h1>
+        <p class="subtitle">Initialize Firebase Firestore Database Structure</p>
+
+        <div class="info-box">
+            <h3>What this will do:</h3>
+            <p>
+                • Create 3 parking locations (rathinam_main_gate, rathinam_gate1, rathinam_gate3)<br>
+                • Add slots subcollection to each location<br>
+                • Initialize slots with default values (available status)<br>
+                • Set up proper document structure
+            </p>
+        </div>
+
+        <div class="setup-options">
+            <div class="option-group">
+                <label>Number of slots per location:</label>
+                <input type="number" id="slotsCount" value="10" min="1" max="50">
+            </div>
+        </div>
+
+        <button class="btn btn-primary" id="setupBtn" onclick="setupDatabase()">
+            <i class="fas fa-database"></i> Initialize Database
+        </button>
+
+        <div id="logContainer" class="log-container"></div>
+        <div id="statusMessage" class="status"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import {
+            getFirestore,
+            doc,
+            setDoc,
+            collection
+        } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBMZz7gVpJjJ2WBaTlutAYC-UnDgXDRGuE",
+            authDomain: "metropolitan-parking-system.firebaseapp.com",
+            projectId: "metropolitan-parking-system",
+            storageBucket: "metropolitan-parking-system.firebasestorage.app",
+            messagingSenderId: "544641174438",
+            appId: "1:544641174438:web:c9baa75180521bbe061d67"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.db = db;
+        window.doc = doc;
+        window.setDoc = setDoc;
+        window.collection = collection;
+
+        function addLog(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            logContainer.classList.add('show');
+            
+            const logLine = document.createElement('div');
+            logLine.className = `log-line log-${type}`;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            logLine.textContent = `[${timestamp}] ${message}`;
+            
+            logContainer.appendChild(logLine);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        window.addLog = addLog;
+
+        window.setupDatabase = async function() {
+            const setupBtn = document.getElementById('setupBtn');
+            const statusMessage = document.getElementById('statusMessage');
+            const logContainer = document.getElementById('logContainer');
+            const slotsCount = parseInt(document.getElementById('slotsCount').value);
+
+            // Reset
+            logContainer.innerHTML = '';
+            statusMessage.className = 'status';
+            statusMessage.textContent = '';
+
+            // Disable button
+            setupBtn.disabled = true;
+            setupBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Setting up...';
+
+            try {
+                addLog('🚀 Starting database setup...', 'info');
+                addLog(`📊 Creating ${slotsCount} slots per location`, 'info');
+
+                const locations = [
+                    { id: 'rathinam_main_gate', name: 'Rathinam Main Gate' },
+                    { id: 'rathinam_gate1', name: 'Rathinam Gate 1' },
+                    { id: 'rathinam_gate3', name: 'Rathinam Gate 3' }
+                ];
+
+                let totalSlots = 0;
+
+                for (const location of locations) {
+                    addLog(`\n📍 Setting up ${location.name}...`, 'info');
+
+                    // Create location document (empty document to establish the path)
+                    const locationRef = doc(db, 'parking_locations', location.id);
+                    await setDoc(locationRef, {
+                        name: location.name,
+                        createdAt: new Date().toISOString()
+                    });
+                    addLog(`✓ Created location: ${location.name}`, 'success');
+
+                    // Create slots subcollection
+                    for (let i = 1; i <= slotsCount; i++) {
+                        const slotRef = doc(db, 'parking_locations', location.id, 'slots', `slot${i}`);
+                        
+                        await setDoc(slotRef, {
+                            slotNumber: i,
+                            status: 'available',
+                            bookedBy: null,
+                            phone: null,
+                            vehicleType: null,
+                            vehicleNumber: null,
+                            bookingTime: null
+                        });
+
+                        totalSlots++;
+                        
+                        if (i % 5 === 0 || i === slotsCount) {
+                            addLog(`  ✓ Created ${i}/${slotsCount} slots`, 'success');
+                        }
+                    }
+                }
+
+                addLog(`\n🎉 Database setup completed successfully!`, 'success');
+                addLog(`📊 Total slots created: ${totalSlots}`, 'success');
+                addLog(`📍 Locations: ${locations.length}`, 'success');
+
+                statusMessage.className = 'status success';
+                statusMessage.innerHTML = `
+                    <strong>✅ Setup Complete!</strong><br>
+                    Created ${totalSlots} slots across ${locations.length} locations.<br>
+                    You can now use the parking system.
+                `;
+
+                setupBtn.innerHTML = '✓ Setup Complete';
+
+            } catch (error) {
+                console.error('Setup error:', error);
+                addLog(`\n❌ Error: ${error.message}`, 'error');
+                
+                statusMessage.className = 'status error';
+                statusMessage.innerHTML = `
+                    <strong>❌ Setup Failed</strong><br>
+                    ${error.message}
+                `;
+
+                setupBtn.disabled = false;
+                setupBtn.innerHTML = '<i class="fas fa-redo"></i> Retry Setup';
+            }
+        };
+    </script>
+</body>
+</html>

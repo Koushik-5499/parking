@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Fix Slot 2</title>
+</head>
+
+<body>
+    <h1>Fixing Slot 2 in Rathinam Main Gate...</h1>
+    <p id="status">Working...</p>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { getFirestore, doc, setDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBMZz7gVpJjJ2WBaTlutAYC-UnDgXDRGuE",
+            authDomain: "metropolitan-parking-system.firebaseapp.com",
+            projectId: "metropolitan-parking-system",
+            storageBucket: "metropolitan-parking-system.firebasestorage.app",
+            messagingSenderId: "544641174438",
+            appId: "1:544641174438:web:c9baa75180521bbe061d67"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        async function fixSlot() {
+            try {
+                const slotRef = doc(db, 'parking_locations', 'rathinam_main_gate', 'slots', 'slot2');
+                await setDoc(slotRef, {
+                    slotNumber: 2,
+                    status: 'available',
+                    bookedBy: null,
+                    phone: null,
+                    vehicleType: null,
+                    vehicleNumber: null,
+                    bookingTime: null,
+                    qrCode: null,
+                    price: null,
+                    occupiedSince: null
+                });
+                document.getElementById('status').innerText = '✅ Slot 2 successfully reset to available (normal). You can close this page.';
+                document.getElementById('status').style.color = 'green';
+            } catch (error) {
+                document.getElementById('status').innerText = '❌ Error: ' + error.message;
+                document.getElementById('status').style.color = 'red';
+            }
+        }
+
+        fixSlot();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Scanner - Smart Metro Parking</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .scanner-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: #1e40af;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .scanner-box {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .scanner-title {
+            font-size: 18px;
+            color: #374151;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #reader {
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .scan-result {
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .scan-result.success {
+            background: #d1fae5;
+            border: 2px solid #10b981;
+            display: block;
+        }
+
+        .scan-result.error {
+            background: #fee2e2;
+            border: 2px solid #ef4444;
+            display: block;
+        }
+
+        .result-icon {
+            font-size: 48px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .result-icon.success {
+            color: #10b981;
+        }
+
+        .result-icon.error {
+            color: #ef4444;
+        }
+
+        .result-title {
+            font-size: 24px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .result-title.success {
+            color: #065f46;
+        }
+
+        .result-title.error {
+            color: #991b1b;
+        }
+
+        .booking-details {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: #6b7280;
+            font-weight: 600;
+        }
+
+        .detail-value {
+            color: #374151;
+            font-weight: 700;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .manual-entry {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            color: #374151;
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-indicator.active {
+            background: #10b981;
+            box-shadow: 0 0 8px #10b981;
+        }
+
+        .status-indicator.inactive {
+            background: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="scanner-container">
+        <div class="header">
+            <h1><i class="fas fa-qrcode"></i> Security QR Scanner</h1>
+            <p>Scan QR codes for automatic vehicle entry approval</p>
+            <div style="margin-top: 10px;">
+                <span class="status-indicator active"></span>
+                <span style="font-size: 12px; color: #10b981; font-weight: 600;">Scanner Active</span>
+            </div>
+        </div>
+
+        <div class="scanner-box">
+            <h2 class="scanner-title">
+                <i class="fas fa-camera"></i> Camera Scanner
+            </h2>
+            <div id="reader"></div>
+            <p style="text-align: center; color: #6b7280; font-size: 14px;">
+                Position the QR code within the camera frame
+            </p>
+        </div>
+
+        <div id="scanResult" class="scan-result">
+            <div class="result-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="result-title">ACCESS APPROVED</div>
+            <div class="booking-details" id="bookingDetails"></div>
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="resetScanner()">
+                    <i class="fas fa-redo"></i> Scan Next
+                </button>
+            </div>
+        </div>
+
+        <div class="manual-entry">
+            <h2 class="scanner-title">
+                <i class="fas fa-keyboard"></i> Manual Entry
+            </h2>
+            <div class="input-group">
+                <label>Booking ID</label>
+                <input type="text" id="manualBookingId" placeholder="Enter booking ID">
+            </div>
+            <button class="btn btn-primary" onclick="verifyManualEntry()" style="width: 100%;">
+                <i class="fas fa-search"></i> Verify Booking
+            </button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script type="module" src="security-script.js"></script>
+</body>
+</html>

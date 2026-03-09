@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Firebase Connection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #2563eb;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .test-item {
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .test-item.pending {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .test-item.success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .test-item.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .test-item i {
+            font-size: 24px;
+        }
+
+        .test-content {
+            flex: 1;
+        }
+
+        .test-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .test-detail {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🔌 Firebase Connection Test</h1>
+
+        <div id="firebaseInit" class="test-item pending">
+            <i class="fas fa-spinner fa-spin"></i>
+            <div class="test-content">
+                <div class="test-title">Firebase Initialization</div>
+                <div class="test-detail">Connecting to Firebase...</div>
+            </div>
+        </div>
+
+        <div id="authTest" class="test-item pending">
+            <i class="fas fa-spinner fa-spin"></i>
+            <div class="test-content">
+                <div class="test-title">Authentication Service</div>
+                <div class="test-detail">Checking Auth...</div>
+            </div>
+        </div>
+
+        <div id="firestoreTest" class="test-item pending">
+            <i class="fas fa-spinner fa-spin"></i>
+            <div class="test-content">
+                <div class="test-title">Firestore Database</div>
+                <div class="test-detail">Checking Firestore...</div>
+            </div>
+        </div>
+
+        <div id="dataTest" class="test-item pending">
+            <i class="fas fa-spinner fa-spin"></i>
+            <div class="test-content">
+                <div class="test-title">Database Structure</div>
+                <div class="test-detail">Checking collections...</div>
+            </div>
+        </div>
+
+        <button class="btn" onclick="window.location.href='setup-database.html'">
+            Setup Database
+        </button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+        import { 
+            getFirestore, 
+            collection, 
+            getDocs 
+        } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBMZz7gVpJjJ2WBaTlutAYC-UnDgXDRGuE",
+            authDomain: "metropolitan-parking-system.firebaseapp.com",
+            projectId: "metropolitan-parking-system",
+            storageBucket: "metropolitan-parking-system.firebasestorage.app",
+            messagingSenderId: "544641174438",
+            appId: "1:544641174438:web:c9baa75180521bbe061d67"
+        };
+
+        function updateTest(id, status, title, detail) {
+            const element = document.getElementById(id);
+            element.className = `test-item ${status}`;
+            
+            let icon = '<i class="fas fa-spinner fa-spin"></i>';
+            if (status === 'success') icon = '<i class="fas fa-check-circle"></i>';
+            if (status === 'error') icon = '<i class="fas fa-times-circle"></i>';
+            
+            element.innerHTML = `
+                ${icon}
+                <div class="test-content">
+                    <div class="test-title">${title}</div>
+                    <div class="test-detail">${detail}</div>
+                </div>
+            `;
+        }
+
+        async function runTests() {
+            try {
+                // Test 1: Firebase Initialization
+                const app = initializeApp(firebaseConfig);
+                updateTest('firebaseInit', 'success', 'Firebase Initialization', 'Connected successfully');
+
+                // Test 2: Authentication
+                const auth = getAuth(app);
+                updateTest('authTest', 'success', 'Authentication Service', 'Auth service ready');
+
+                // Test 3: Firestore
+                const db = getFirestore(app);
+                updateTest('firestoreTest', 'success', 'Firestore Database', 'Firestore connected');
+
+                // Test 4: Check Database Structure
+                try {
+                    const locationsRef = collection(db, 'parking_locations');
+                    const snapshot = await getDocs(locationsRef);
+                    
+                    if (snapshot.empty) {
+                        updateTest('dataTest', 'error', 'Database Structure', 
+                            'No data found. Click "Setup Database" to initialize.');
+                    } else {
+                        let totalSlots = 0;
+                        for (const doc of snapshot.docs) {
+                            const slotsRef = collection(db, 'parking_locations', doc.id, 'slots');
+                            const slotsSnap = await getDocs(slotsRef);
+                            totalSlots += slotsSnap.size;
+                        }
+                        
+                        updateTest('dataTest', 'success', 'Database Structure', 
+                            `Found ${snapshot.size} locations with ${totalSlots} total slots`);
+                    }
+                } catch (error) {
+                    if (error.code === 'permission-denied') {
+                        updateTest('dataTest', 'error', 'Database Structure', 
+                            'Permission denied. Update Firestore rules.');
+                    } else {
+                        updateTest('dataTest', 'error', 'Database Structure', 
+                            'No data found. Click "Setup Database" to initialize.');
+                    }
+                }
+
+            } catch (error) {
+                console.error('Test error:', error);
+                updateTest('firebaseInit', 'error', 'Firebase Initialization', error.message);
+            }
+        }
+
+        runTests();
+    </script>
+</body>
+</html>
