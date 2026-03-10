@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -118,6 +119,31 @@
             margin-bottom: 20px;
         }
 
+        .card-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .book-slots-btn {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .book-slots-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
         .direction-btn {
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             color: white;
@@ -128,7 +154,7 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            margin-top: 10px;
+            width: 100%;
         }
 
         .direction-btn:hover {
@@ -148,6 +174,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
@@ -172,9 +199,15 @@
                 </div>
                 <div class="location-name">Rathinam Main Gate</div>
                 <div class="location-desc">Main entrance parking area</div>
-                <button class="direction-btn" onclick="event.stopPropagation(); openMainGate()">
-                    📍 Direction
-                </button>
+                <div class="card-actions">
+                    <button class="book-slots-btn"
+                        onclick="event.stopPropagation(); selectLocation('rathinam_main_gate', 'Rathinam Main Gate')">
+                        <i class="fas fa-car"></i> Book Slots
+                    </button>
+                    <button class="direction-btn" onclick="event.stopPropagation(); openMainGate()">
+                        📍 Direction
+                    </button>
+                </div>
             </div>
 
             <div class="location-card" onclick="selectLocation('rathinam_gate1', 'Rathinam Gate 1')">
@@ -183,9 +216,15 @@
                 </div>
                 <div class="location-name">Rathinam Gate 1</div>
                 <div class="location-desc">Gate 1 parking facility</div>
-                <button class="direction-btn" onclick="event.stopPropagation(); openGate1()">
-                    📍 Direction
-                </button>
+                <div class="card-actions">
+                    <button class="book-slots-btn"
+                        onclick="event.stopPropagation(); selectLocation('rathinam_gate1', 'Rathinam Gate 1')">
+                        <i class="fas fa-car"></i> Book Slots
+                    </button>
+                    <button class="direction-btn" onclick="event.stopPropagation(); openGate1()">
+                        📍 Direction
+                    </button>
+                </div>
             </div>
 
             <div class="location-card" onclick="selectLocation('rathinam_gate3', 'Rathinam Gate 3')">
@@ -194,13 +233,20 @@
                 </div>
                 <div class="location-name">Rathinam Gate 3</div>
                 <div class="location-desc">Gate 3 parking zone</div>
-                <button class="direction-btn" onclick="event.stopPropagation(); openGate3()">
-                    📍 Direction
-                </button>
+                <div class="card-actions">
+                    <button class="book-slots-btn"
+                        onclick="event.stopPropagation(); selectLocation('rathinam_gate3', 'Rathinam Gate 3')">
+                        <i class="fas fa-car"></i> Book Slots
+                    </button>
+                    <button class="direction-btn" onclick="event.stopPropagation(); openGate3()">
+                        📍 Direction
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
     <script type="module" src="locations-script.js"></script>
 </body>
+
 </html>

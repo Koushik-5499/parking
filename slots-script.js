@@ -4,7 +4,10 @@ import {
     doc,
     onSnapshot,
     updateDoc,
-    getDoc
+    getDoc,
+    getDocs,
+    query,
+    where
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
 let selectedLocation = null;
@@ -72,7 +75,21 @@ function createSlotCard(slot) {
 
     const myBookings = JSON.parse(localStorage.getItem('myBookings') || '{}');
     const myBookingKey = selectedLocation + '_' + slot.id;
-    const myBooking = myBookings[myBookingKey];
+    let myBooking = myBookings[myBookingKey];
+
+    // Clean up stale local storage if slot has a different QR or is available
+    if (myBooking && slot.qrCode && slot.qrCode !== myBooking.qrCode) {
+        delete myBookings[myBookingKey];
+        localStorage.setItem('myBookings', JSON.stringify(myBookings));
+        myBooking = null;
+    } else if (myBooking && status === 'available') {
+        delete myBookings[myBookingKey];
+        localStorage.setItem('myBookings', JSON.stringify(myBookings));
+        myBooking = null;
+    }
+
+    let isMyBooking = (myBooking !== null && myBooking !== undefined);
+    let bData = myBooking;
 
     if (status === 'available') {
         const bookBtn = document.createElement('button');
@@ -83,14 +100,22 @@ function createSlotCard(slot) {
         card.appendChild(bookBtn);
 
         card.addEventListener('click', () => openBookingModal(slot));
-    } else if (status === 'pending' && myBooking) {
+    } else if (status === 'pending' && isMyBooking) {
         const btnContainer = document.createElement('div');
         btnContainer.style.cssText = 'margin-top: auto; display: flex; flex-direction: column; gap: 5px;';
+
+        if (slot.bookingTime) {
+            const timerDiv = document.createElement('div');
+            timerDiv.className = 'pending-timer';
+            timerDiv.setAttribute('data-booking-time', slot.bookingTime);
+            timerDiv.style.cssText = 'color: #ef4444; font-size: 13px; font-weight: bold; text-align: center;';
+            btnContainer.appendChild(timerDiv);
+        }
 
         const viewBtn = document.createElement('button');
         viewBtn.style.cssText = 'font-size: 12px; padding: 6px; background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); border: none; color: white; border-radius: 4px; cursor: pointer; font-weight: bold;';
         viewBtn.textContent = 'View QR';
-        viewBtn.onclick = (e) => { e.stopPropagation(); window.viewMyQR(slot.id, slot.slotNumber); };
+        viewBtn.onclick = (e) => { e.stopPropagation(); generateQRCode(bData.qrCode, slot.slotNumber, selectedLocationName, bData.name, bData.vehicleNumber); };
 
         const cancelBtn = document.createElement('button');
         cancelBtn.style.cssText = 'font-size: 12px; padding: 6px; background: #ef4444; border: none; color: white; border-radius: 4px; cursor: pointer; font-weight: bold;';
@@ -100,11 +125,11 @@ function createSlotCard(slot) {
         btnContainer.appendChild(viewBtn);
         btnContainer.appendChild(cancelBtn);
         card.appendChild(btnContainer);
-    } else if (status === 'occupied' && myBooking) {
+    } else if (status === 'occupied' && isMyBooking) {
         const viewBtn = document.createElement('button');
         viewBtn.style.cssText = 'width: 100%; font-size: 12px; padding: 6px; background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); border: none; color: white; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: auto;';
         viewBtn.textContent = 'View QR';
-        viewBtn.onclick = (e) => { e.stopPropagation(); window.viewMyQR(slot.id, slot.slotNumber); };
+        viewBtn.onclick = (e) => { e.stopPropagation(); generateQRCode(bData.qrCode, slot.slotNumber, selectedLocationName, bData.name, bData.vehicleNumber); };
         card.appendChild(viewBtn);
     }
 
@@ -140,6 +165,34 @@ async function handleBooking(e) {
     }
 
     try {
+        let hasExistingBooking = false;
+        let existingSlotNumber = '';
+        let existingLocation = '';
+        const locations = ['rathinam_main_gate', 'rathinam_gate1', 'rathinam_gate3'];
+        for (const loc of locations) {
+            const checkRef = collection(db, 'parking_locations', loc, 'slots');
+            const qCheck = query(checkRef, where('phone', '==', phone));
+            const qs = await getDocs(qCheck);
+            qs.forEach(d => {
+                const data = d.data();
+                if (data.status === 'pending' || data.status === 'occupied') {
+                    hasExistingBooking = true;
+                    existingSlotNumber = data.slotNumber;
+                    existingLocation = loc;
+                }
+            });
+            if (hasExistingBooking) break;
+        }
+        if (hasExistingBooking) {
+            let locName = existingLocation;
+            if (locName === 'rathinam_main_gate') locName = 'Main Gate';
+            else if (locName === 'rathinam_gate1') locName = 'Gate 1';
+            else if (locName === 'rathinam_gate3') locName = 'Gate 3';
+
+            alert(`A booking with this phone number already exists (Slot ${existingSlotNumber} at ${locName}). You can only book one slot at a time.`);
+            return;
+        }
+
         // Get slot reference
         const slotRef = doc(db, 'parking_locations', selectedLocation, 'slots', selectedSlot.id);
 
@@ -166,6 +219,7 @@ async function handleBooking(e) {
         // Update Firestore
         await updateDoc(slotRef, {
             status: 'pending',
+            bookingTime: Date.now(),
             bookedBy: name,
             phone: phone,
             vehicleType: vehicleType,
@@ -290,3 +344,59 @@ window.viewMyQR = function (slotId, slotNumber) {
         generateQRCode(b.qrCode, slotNumber, selectedLocationName, b.name, b.vehicleNumber);
     }
 };
+
+// AUTO-CANCEL LOGIC
+setInterval(checkPendingTimeout, 60000);
+
+async function checkPendingTimeout() {
+    if (!selectedLocation) return;
+
+    try {
+        const slotsRef = collection(db, 'parking_locations', selectedLocation, 'slots');
+        const q = query(slotsRef, where('status', '==', 'pending'));
+        const querySnapshot = await getDocs(q);
+
+        querySnapshot.forEach(async (docSnap) => {
+            const data = docSnap.data();
+            if (data.status === 'pending' && data.bookingTime) {
+                const now = Date.now();
+                const diff = now - data.bookingTime;
+
+                if (diff > 600000) { // 10 minutes = 600000 ms
+                    await updateDoc(docSnap.ref, {
+                        status: 'available',
+                        bookingTime: null,
+                        bookedBy: null,
+                        phone: null,
+                        vehicleType: null,
+                        vehicleNumber: null,
+                        qrCode: null,
+                        bookingId: null,
+                        userEmail: null,
+                        price: null
+                    });
+                }
+            }
+        });
+    } catch (err) {
+        console.error("Auto cancel error:", err);
+    }
+}
+
+// UI TIMER LOGIC
+setInterval(() => {
+    document.querySelectorAll('.pending-timer').forEach(el => {
+        const bookingTime = parseInt(el.getAttribute('data-booking-time'));
+        if (!bookingTime) return;
+
+        const now = Date.now();
+        const diff = 600000 - (now - bookingTime);
+        if (diff <= 0) {
+            el.textContent = "Expired";
+        } else {
+            const mins = Math.floor(diff / 60000);
+            const secs = Math.floor((diff % 60000) / 1000);
+            el.textContent = `Expires in: ${mins}m ${secs}s`;
+        }
+    });
+}, 1000);
