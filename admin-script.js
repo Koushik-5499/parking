@@ -96,41 +96,67 @@ async function onScanSuccess(decodedText) {
 
 async function processQRCode(qrData) {
     try {
-        // Parse QR data - expecting JSON with slotId, userEmail, vehicleNumber
-        let bookingData;
+        const qrString = qrData.trim();
+        let foundSlotDoc = null;
+        let slotData = null;
+        let userEmail = 'User';
+        let vehicleNumber = null;
+        let location = null;
+        let slotId = null;
+
+        // Try to parse as JSON first
         try {
-            bookingData = JSON.parse(qrData);
+            const bookingData = JSON.parse(qrString);
+            slotId = bookingData.slotId;
+            location = bookingData.location;
+            vehicleNumber = bookingData.vehicleNumber;
+            userEmail = bookingData.userEmail || bookingData.bookedBy || 'User';
+
+            if (slotId && location) {
+                const slotRef = doc(db, 'parking_locations', location, 'slots', slotId);
+                const snap = await getDoc(slotRef);
+                if (snap.exists()) {
+                    foundSlotDoc = snap;
+                }
+            }
         } catch (parseError) {
-            showScanResult(false, "Invalid QR Code Format");
+            // Not JSON, fallback to string ID search
+        }
+
+        if (!foundSlotDoc) {
+            const bookingId = qrString;
+            const locations = ['rathinam_main_gate', 'rathinam_gate1', 'rathinam_gate3'];
+
+            for (const loc of locations) {
+                const slotsRef = collection(db, 'parking_locations', loc, 'slots');
+                const q = query(slotsRef, where('qrCode', '==', bookingId));
+                const querySnapshot = await getDocs(q);
+
+                if (!querySnapshot.empty) {
+                    foundSlotDoc = querySnapshot.docs[0];
+                    location = loc;
+                    slotId = foundSlotDoc.id;
+                    break;
+                }
+            }
+        }
+
+        if (!foundSlotDoc) {
+            showScanResult(false, "Slot not found or invalid QR code");
             return;
         }
 
-        const { slotId, location, vehicleNumber } = bookingData;
-        // Get userEmail from QR data
-        const userEmail = bookingData.userEmail || bookingData.bookedBy || 'User';
-
-        if (!slotId || !location) {
-            showScanResult(false, "Invalid QR Code - Missing Data");
-            return;
-        }
-
-        // Get slot reference
-        const slotRef = doc(db, 'parking_locations', location, 'slots', slotId);
-        const slotSnap = await getDoc(slotRef);
-
-        // Error handling: Check if document exists
-        if (!slotSnap.exists()) {
-            showScanResult(false, "Slot not found");
-            return;
-        }
-
-        const slotData = slotSnap.data();
-
-        // Error handling: Check if slotNumber exists
+        slotData = foundSlotDoc.data();
         if (!slotData.slotNumber) {
             showScanResult(false, "Error: Invalid slot data");
             return;
         }
+
+        // Override info from document if we searched by string ID
+        if (!vehicleNumber) vehicleNumber = slotData.vehicleNumber;
+        if (userEmail === 'User') userEmail = slotData.userEmail && slotData.userEmail !== 'Guest' ? slotData.userEmail : (slotData.bookedBy || 'User');
+
+        const slotRef = foundSlotDoc.ref;
 
         // Show message: "userEmail has booked this slot"
         const bookingMessage = `${userEmail} has booked this slot`;

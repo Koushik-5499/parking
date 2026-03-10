@@ -188,19 +188,37 @@ async function onScanSuccess(decodedText) {
 
 async function processQRCode(qrData) {
     try {
-        const bookingId = qrData.trim();
-        const locations = ['rathinam_main_gate', 'rathinam_gate1', 'rathinam_gate3'];
+        const qrString = qrData.trim();
         let foundSlotDoc = null;
 
-        // Search across all locations since collectionGroup requires a custom index
-        for (const loc of locations) {
-            const slotsRef = collection(db, 'parking_locations', loc, 'slots');
-            const q = query(slotsRef, where('qrCode', '==', bookingId));
-            const querySnapshot = await getDocs(q);
+        // Try to parse as JSON first (from slots-script.js format)
+        try {
+            const data = JSON.parse(qrString);
+            if (data.location && data.slotId) {
+                const slotRef = doc(db, 'parking_locations', data.location, 'slots', data.slotId);
+                const snap = await getDoc(slotRef);
+                if (snap.exists()) {
+                    foundSlotDoc = snap;
+                }
+            }
+        } catch (e) {
+            // Not JSON, ignore and fallback to string ID search
+        }
 
-            if (!querySnapshot.empty) {
-                foundSlotDoc = querySnapshot.docs[0];
-                break;
+        // Search by booking ID text (from slots-dashboard-script.js format)
+        if (!foundSlotDoc) {
+            const bookingId = qrString;
+            const locations = ['rathinam_main_gate', 'rathinam_gate1', 'rathinam_gate3'];
+
+            for (const loc of locations) {
+                const slotsRef = collection(db, 'parking_locations', loc, 'slots');
+                const q = query(slotsRef, where('qrCode', '==', bookingId));
+                const querySnapshot = await getDocs(q);
+
+                if (!querySnapshot.empty) {
+                    foundSlotDoc = querySnapshot.docs[0];
+                    break;
+                }
             }
         }
 
@@ -236,25 +254,44 @@ async function processQRCode(qrData) {
         console.error("Error processing QR:", error);
         showScanResult(false, "System Error: " + error.message);
     }
-
-    setTimeout(() => {
-        isScanning = false;
-    }, 3000);
 }
 
 function showScanResult(success, message) {
-    const resultDiv = document.getElementById('scanResult');
-    resultDiv.className = `scan-result ${success ? 'success' : 'error'}`;
-    resultDiv.innerHTML = `
-        <div class="result-title ${success ? 'success' : 'error'}">
-            <i class="fas fa-${success ? 'check-circle' : 'times-circle'}"></i> ${message}
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 5000;
+    `;
+
+    const bgColor = success ? '#d1fae5' : '#fee2e2';
+    const textColor = success ? '#065f46' : '#991b1b';
+    const borderColor = success ? '#10b981' : '#ef4444';
+    const icon = success ? 'check-circle' : 'times-circle';
+
+    modal.innerHTML = `
+        <div class="modal-content" style="background: white; padding: 30px; border-radius: 12px; max-width: 400px; width: 90%; text-align: center;">
+            <div style="background: ${bgColor}; padding: 20px; border-radius: 8px; margin-bottom: 20px; color: ${textColor}; border: 1px solid ${borderColor}; text-align: left;">
+                <h3 style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px; font-size: 18px; margin-top: 0;">
+                    <i class="fas fa-${icon}"></i> 
+                    ${success ? 'Success' : 'Error'}
+                </h3>
+                <div style="font-size: 15px; line-height: 1.5;">
+                    ${message}
+                </div>
+            </div>
+            <button style="width: 100%; padding: 12px; background: #6b7280; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                Close
+            </button>
         </div>
     `;
 
-    setTimeout(() => {
-        resultDiv.className = 'scan-result';
-        resultDiv.innerHTML = '';
-    }, 5000);
+    document.body.appendChild(modal);
+
+    const closeBtn = modal.querySelector('button');
+    closeBtn.addEventListener('click', () => {
+        modal.remove();
+        isScanning = false;
+    });
 }
 
 function showSlotDetails(locationId, slot) {
@@ -424,16 +461,22 @@ window.processExit = async function (locationId, slotId) {
                     <p style="margin-bottom: 5px;"><strong>Total Minutes:</strong> ${totalMinutes} Min(s)</p>
                     <p style="margin-bottom: 0;"><strong>Amount to Pay:</strong> <span style="font-size: 20px; color: #ef4444; font-weight: bold;">₹${finalPrice}</span></p>
                 </div>
-                <button onclick="this.parentElement.parentElement.remove()" style="width: 100%; padding: 12px; background: #6b7280; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                <button style="width: 100%; padding: 12px; background: #6b7280; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
                     Close
                 </button>
             </div>
         `;
         document.body.appendChild(receiptModal);
-        document.body.appendChild(receiptModal);
+
+        const closeBtn = receiptModal.querySelector('button');
+        closeBtn.addEventListener('click', () => {
+            receiptModal.remove();
+            isScanning = false;
+        });
 
     } catch (error) {
         console.error("Exit error:", error);
         alert('Failed to process exit: ' + error.message);
+        isScanning = false;
     }
 };
