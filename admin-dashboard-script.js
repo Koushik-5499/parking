@@ -15,7 +15,8 @@ import {
     getDocs,
     collectionGroup,
     serverTimestamp,
-    getDoc
+    getDoc,
+    addDoc
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -52,6 +53,9 @@ document.addEventListener('DOMContentLoaded', () => {
         loadAllStats();
         loadSlots(currentLocation);
         initializeScanner();
+        
+        document.getElementById('showReportBtn')?.addEventListener('click', filterData);
+        document.getElementById('exportExcelBtn')?.addEventListener('click', exportExcel);
     });
 
     document.getElementById('logoutBtn').addEventListener('click', async () => {
@@ -440,6 +444,26 @@ window.processExit = async function (locationId, slotId) {
             entryTime: null
         });
 
+        // Add to reports collection
+        try {
+            await addDoc(collection(db, 'reports'), {
+                locationId: locationId,
+                slotId: slotId,
+                slotNumber: slotData.slotNumber || '',
+                bookedBy: slotData.bookedBy || 'N/A',
+                userEmail: slotData.userEmail || 'N/A',
+                phone: slotData.phone || 'N/A',
+                vehicleNumber: slotData.vehicleNumber || 'N/A',
+                vehicleType: slotData.vehicleType || 'N/A',
+                bookingTime: slotData.bookingTime ? new Date(slotData.bookingTime) : null,
+                entryTime: entryDate,
+                exitTime: exitDate,
+                price: finalPrice
+            });
+        } catch (reportErr) {
+            console.error('Error saving report:', reportErr);
+        }
+
         // Close any open modals
         const modals = document.querySelectorAll('div[style*="position: fixed"]');
         modals.forEach(modal => modal.remove());
@@ -480,3 +504,111 @@ window.processExit = async function (locationId, slotId) {
         isScanning = false;
     }
 };
+
+async function filterData() {
+    const fromVal = document.getElementById('reportFrom').value;
+    const toVal = document.getElementById('reportTo').value;
+
+    if (!fromVal || !toVal) {
+        alert('Please select both From and To dates and times.');
+        return;
+    }
+
+    const fromDate = new Date(fromVal);
+    const toDate = new Date(toVal);
+
+    if (fromDate > toDate) {
+        alert('From date cannot be after To date.');
+        return;
+    }
+
+    try {
+        const btn = document.getElementById('showReportBtn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+        btn.disabled = true;
+
+        const reportsRef = collection(db, 'reports');
+        const querySnapshot = await getDocs(reportsRef);
+        
+        const reportTable = document.getElementById("reportTable");
+        const tableBody = document.getElementById("tableBody");
+        tableBody.innerHTML = '';
+        
+        let hasData = false;
+
+        querySnapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            
+            // Check if exit time falls within range
+            let reportDate = null;
+            if (data.exitTime && data.exitTime.toDate) {
+                reportDate = data.exitTime.toDate();
+            } else if (data.exitTime) {
+                reportDate = new Date(data.exitTime);
+            }
+
+            if (reportDate && reportDate >= fromDate && reportDate <= toDate) {
+                hasData = true;
+                let entryDate = data.entryTime?.toDate ? data.entryTime.toDate().toLocaleString() : 
+                               (data.entryTime ? new Date(data.entryTime).toLocaleString() : 'N/A');
+                let exitD = reportDate.toLocaleString();
+                
+                let locationName = 'N/A';
+                if (data.locationId === 'rathinam_main_gate') locationName = 'Rathinam Main Gate';
+                else if (data.locationId === 'rathinam_gate1') locationName = 'Gate 1';
+                else if (data.locationId === 'rathinam_gate3') locationName = 'Gate 3';
+
+                let row = `
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                    <td style="padding: 12px;">${locationName}</td>
+                    <td style="padding: 12px;">${data.bookedBy || 'N/A'}</td>
+                    <td style="padding: 12px;">${data.userEmail || 'N/A'}</td>
+                    <td style="padding: 12px;">${data.phone || 'N/A'}</td>
+                    <td style="padding: 12px;">${data.vehicleNumber || 'N/A'}</td>
+                    <td style="padding: 12px;">${entryDate}</td>
+                    <td style="padding: 12px;">${exitD}</td>
+                    <td style="padding: 12px;">${data.slotNumber || 'N/A'}</td>
+                    <td style="padding: 12px; color: #10b981; font-weight: bold;">₹${data.price || 0}</td>
+                </tr>
+                `;
+
+                tableBody.innerHTML += row;
+            }
+        });
+
+        if (!hasData) {
+            alert('No records found for the selected date range.');
+            reportTable.style.display = 'none';
+        } else {
+            reportTable.style.display = 'table';
+        }
+
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        alert('Failed to load report: ' + error.message);
+        const btn = document.getElementById('showReportBtn');
+        btn.innerHTML = '<i class="fas fa-list"></i> Show Report';
+        btn.disabled = false;
+    }
+}
+
+function exportExcel() {
+    let table = document.getElementById("reportTable");
+    
+    if (!table || table.style.display === 'none') {
+        alert('Please generate the report first by clicking "Show Report".');
+        return;
+    }
+
+    try {
+        let workbook = window.XLSX.utils.table_to_book(table, {sheet: "Parking Report"});
+        window.XLSX.writeFile(workbook, "Parking_Report.xlsx");
+    } catch (error) {
+        console.error('Error exporting to excel:', error);
+        alert('Failed to export: ' + error.message);
+    }
+}

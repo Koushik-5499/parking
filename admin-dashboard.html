@@ -263,6 +263,51 @@
                 <div id="reader"></div>
                 <div id="scanResult" class="scan-result"></div>
             </div>
+
+            <!-- Export Reports Section -->
+            <div class="section" style="grid-column: 1 / -1;">
+                <h2 class="section-title">
+                    <i class="fas fa-file-excel"></i> Export Reports
+                </h2>
+                <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; flex-direction: row; justify-content: flex-start; align-items: flex-end;">
+                    <div style="flex: 1; min-width: 200px;">
+                        <label style="display: block; margin-bottom: 5px; color: #374151; font-weight: 600;">From Date & Time</label>
+                        <input type="datetime-local" id="reportFrom" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box;">
+                    </div>
+                    <div style="flex: 1; min-width: 200px;">
+                        <label style="display: block; margin-bottom: 5px; color: #374151; font-weight: 600;">To Date & Time</label>
+                        <input type="datetime-local" id="reportTo" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box;">
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="showReportBtn" style="background: #2563eb; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; justify-content: center; height: 42px;">
+                            <i class="fas fa-list"></i> Show Report
+                        </button>
+                        <button id="exportExcelBtn" style="background: #10b981; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; justify-content: center; height: 42px;">
+                            <i class="fas fa-download"></i> Export Excel
+                        </button>
+                    </div>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table id="reportTable" style="width: 100%; border-collapse: collapse; margin-top: 20px; display: none;">
+                        <thead>
+                            <tr style="background-color: #f3f4f6; color: #374151; text-align: left;">
+                                <th style="padding: 12px; border-bottom: 2px solid #e5e7eb;">Gate Name</th>
+                                <th style="padding: 12px; border-bottom: 2px solid #e5e7eb;">Customer Name</th>
+                                <th style="padding: 12px; border-bottom: 2px solid #e5e7eb;">Username</th>
+                                <th style="padding: 12px; border-bottom: 2px solid #e5e7eb;">Phone No.</th>
+                                <th style="padding: 12px; border-bottom: 2px solid #e5e7eb;">Vehicle</th>
+                                <th style="padding: 12px; border-bottom: 2px solid #e5e7eb;">Entry</th>
+                                <th style="padding: 12px; border-bottom: 2px solid #e5e7eb;">Exit</th>
+                                <th style="padding: 12px; border-bottom: 2px solid #e5e7eb;">Slot</th>
+                                <th style="padding: 12px; border-bottom: 2px solid #e5e7eb;">Payment</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -270,6 +315,7 @@
     <div id="slotModal" class="modal"></div>
 
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script type="module" src="admin-dashboard-script.js"></script>
 </body>
 </html>
