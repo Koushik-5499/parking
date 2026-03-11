@@ -53,8 +53,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         loadAllStats();
         loadSlots(currentLocation);
-        initializeScanner();
         
+        document.getElementById('toggleScannerBtn')?.addEventListener('click', window.toggleScanner);
+        document.getElementById('manualCodeSubmit')?.addEventListener('click', async () => {
+            const val = document.getElementById('manualCodeInput')?.value.trim();
+            if (!val) return;
+            document.getElementById('manualCodeInput').value = '';
+            if (isScanning) return;
+            isScanning = true;
+            await window.stopScanner();
+            await processQRCode(val);
+        });
+
         document.getElementById('showReportBtn')?.addEventListener('click', filterData);
         document.getElementById('exportExcelBtn')?.addEventListener('click', exportExcel);
     });
@@ -197,23 +207,61 @@ window.switchLocation = function (location) {
     loadSlots(location);
 };
 
-function initializeScanner() {
-    html5QrCode = new Html5Qrcode("reader");
+let isScannerOpen = false;
 
-    const config = {
-        fps: 10,
-        qrbox: { width: 250, height: 250 }
-    };
+window.stopScanner = async function() {
+    if (html5QrCode && isScannerOpen) {
+        try {
+            await html5QrCode.stop();
+        } catch (err) {
+            console.error("Failed to stop scanner", err);
+        }
+    }
+    const readerContainer = document.getElementById('reader-container');
+    const toggleBtn = document.getElementById('toggleScannerBtn');
+    
+    if (readerContainer) readerContainer.style.display = 'none';
+    if (toggleBtn) {
+        toggleBtn.innerHTML = '<i class="fas fa-camera"></i> Open QR Code Scanner';
+        toggleBtn.style.background = '#2563eb';
+    }
+    isScannerOpen = false;
+};
 
-    html5QrCode.start(
-        { facingMode: "environment" },
-        config,
-        onScanSuccess,
-        onScanError
-    ).catch(err => {
-        console.error("Camera error:", err);
-    });
-}
+window.toggleScanner = async function() {
+    if (isScannerOpen) {
+        await window.stopScanner();
+    } else {
+        const readerContainer = document.getElementById('reader-container');
+        const toggleBtn = document.getElementById('toggleScannerBtn');
+        
+        readerContainer.style.display = 'block';
+        toggleBtn.innerHTML = '<i class="fas fa-times"></i> Close QR Code Scanner';
+        toggleBtn.style.background = '#ef4444';
+
+        if (!html5QrCode) {
+            html5QrCode = new window.Html5Qrcode("reader");
+        }
+        
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+        try {
+            await html5QrCode.start(
+                { facingMode: "environment" },
+                config,
+                onScanSuccess,
+                onScanError
+            );
+            isScannerOpen = true;
+        } catch (err) {
+            console.error("Camera error:", err);
+            readerContainer.style.display = 'none';
+            toggleBtn.innerHTML = '<i class="fas fa-camera"></i> Open QR Code Scanner';
+            toggleBtn.style.background = '#2563eb';
+            alert("Camera access failed or denied.");
+            isScannerOpen = false;
+        }
+    }
+};
 
 function onScanError(errorMessage) {
     // Ignore
@@ -224,6 +272,7 @@ async function onScanSuccess(decodedText) {
     isScanning = true;
 
     console.log("QR Scanned:", decodedText);
+    await window.stopScanner();
     await processQRCode(decodedText);
 }
 
@@ -452,6 +501,7 @@ window.openAdminBookingModal = function(locationId, slotId, slotNumber) {
             <div style="margin-bottom: 20px;">
                 <label style="display: block; margin-bottom: 5px; color: #374151; font-weight: 600;">Vehicle Number</label>
                 <input type="text" id="adminBookVehicle" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+                <small style="display: block; color: #10b981; font-weight: bold; margin-top: 8px;">* Per Hour: ₹80</small>
             </div>
             <div style="display: flex; gap: 10px;">
                 <button onclick="submitAdminBooking('${locationId}', '${slotId}')" style="flex: 1; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
@@ -626,6 +676,15 @@ window.processExit = async function (locationId, slotId) {
 };
 
 async function filterData() {
+    const reportTable = document.getElementById("reportTable");
+    const btn = document.getElementById('showReportBtn');
+
+    if (btn.innerText.trim().includes('Hide Report')) {
+        reportTable.style.display = 'none';
+        btn.innerHTML = '<i class="fas fa-list"></i> Show Report';
+        return;
+    }
+
     const fromVal = document.getElementById('reportFrom').value;
     const toVal = document.getElementById('reportTo').value;
 
@@ -700,11 +759,12 @@ async function filterData() {
         if (!hasData) {
             alert('No records found for the selected date range.');
             reportTable.style.display = 'none';
+            btn.innerHTML = '<i class="fas fa-list"></i> Show Report';
         } else {
             reportTable.style.display = 'table';
+            btn.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Report';
         }
 
-        btn.innerHTML = originalText;
         btn.disabled = false;
 
     } catch (error) {

@@ -500,6 +500,11 @@ setInterval(() => {
             const mins = Math.floor(diff / 60000);
             const secs = Math.floor((diff % 60000) / 1000);
             el.textContent = `Expires in: ${mins}m ${secs}s`;
+            
+            if (mins === 10 && secs === 0 && el.dataset.alert10mTriggered !== 'true') {
+                el.dataset.alert10mTriggered = 'true';
+                alert(`Reminder: Your booking for Slot ${slotId} will expire in 10 minutes! Please scan your QR code at the gate.`);
+            }
         }
     });
 }, 1000);
