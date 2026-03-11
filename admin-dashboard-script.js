@@ -16,7 +16,8 @@ import {
     collectionGroup,
     serverTimestamp,
     getDoc,
-    addDoc
+    addDoc,
+    setDoc
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -111,7 +112,37 @@ function loadAllStats() {
     });
 }
 
+const VIP_CHECKED = {};
+
+async function ensureVIPSlotsExist(location) {
+    if (VIP_CHECKED[location]) return;
+    VIP_CHECKED[location] = true;
+    
+    try {
+        for (let i = 1; i <= 5; i++) {
+            const vipId = `vip_slot_${i}`;
+            const slotRef = doc(db, 'parking_locations', location, 'slots', vipId);
+            const snap = await getDoc(slotRef);
+            if (!snap.exists()) {
+                await setDoc(slotRef, {
+                    slotNumber: `VIP-${i}`,
+                    status: 'available',
+                    isVIP: true,
+                    bookedBy: null,
+                    phone: null,
+                    vehicleType: null,
+                    vehicleNumber: null,
+                    bookingTime: null
+                });
+            }
+        }
+    } catch(err) {
+        console.error("VIP slots init error:", err);
+    }
+}
+
 function loadSlots(location) {
+    ensureVIPSlotsExist(location);
     const slotsRef = collection(db, 'parking_locations', location, 'slots');
 
     onSnapshot(slotsRef, (snapshot) => {
@@ -129,8 +160,14 @@ function loadSlots(location) {
         });
 
         slots.sort((a, b) => {
-            const numA = parseInt(a.slotNumber) || 0;
-            const numB = parseInt(b.slotNumber) || 0;
+            const isVipA = a.slotNumber?.toString().startsWith('VIP');
+            const isVipB = b.slotNumber?.toString().startsWith('VIP');
+            
+            if (isVipA && !isVipB) return 1;
+            if (!isVipA && isVipB) return -1;
+            
+            const numA = parseInt(a.slotNumber?.toString().replace('VIP-', '')) || 0;
+            const numB = parseInt(b.slotNumber?.toString().replace('VIP-', '')) || 0;
             return numA - numB;
         });
 
@@ -349,6 +386,16 @@ function showSlotDetails(locationId, slot) {
 
     detailsHTML += `</div>`;
 
+    if (slot.status === 'available' && slot.isVIP) {
+        detailsHTML += `
+            <button onclick="openAdminBookingModal('${locationId}', '${slot.id}', '${slot.slotNumber}')" 
+                style="width: 100%; padding: 12px; background: #2563eb; color: white; 
+                border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-bottom: 10px;">
+                <i class="fas fa-car-side"></i> Book Offline / VIP
+            </button>
+        `;
+    }
+
     if (slot.status === 'pending') {
         detailsHTML += `
             <button onclick="cancelBooking('${locationId}', '${slot.id}')" 
@@ -378,6 +425,79 @@ function showSlotDetails(locationId, slot) {
 
     modal.innerHTML = detailsHTML;
     document.body.appendChild(modal);
+}
+
+window.openAdminBookingModal = function(locationId, slotId, slotNumber) {
+    const existingModals = document.querySelectorAll('div[style*="z-index: 3000"]');
+    existingModals.forEach(m => m.remove());
+
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 3500;
+    `;
+    modal.innerHTML = `
+        <div class="modal-content" style="background: white; padding: 30px; border-radius: 12px; max-width: 400px; width: 90%; text-align: left;">
+            <h2 style="color: #2563eb; margin-bottom: 20px;"><i class="fas fa-car"></i> VIP / Offline Booking</h2>
+            <p style="margin-bottom: 15px; font-weight: bold; color: #374151;">Booking Slot: ${slotNumber}</p>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; color: #374151; font-weight: 600;">Customer Name</label>
+                <input type="text" id="adminBookName" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; color: #374151; font-weight: 600;">Phone Number</label>
+                <input type="tel" id="adminBookPhone" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 5px; color: #374151; font-weight: 600;">Vehicle Number</label>
+                <input type="text" id="adminBookVehicle" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="submitAdminBooking('${locationId}', '${slotId}')" style="flex: 1; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    <i class="fas fa-check"></i> Book & Start Entry
+                </button>
+                <button onclick="this.parentElement.parentElement.parentElement.remove()" style="flex: 1; padding: 12px; background: #6b7280; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+window.submitAdminBooking = async function(locationId, slotId) {
+    const name = document.getElementById('adminBookName').value.trim();
+    const phone = document.getElementById('adminBookPhone').value.trim();
+    const vehicle = document.getElementById('adminBookVehicle').value.trim();
+    
+    if(!name || !phone || !vehicle) {
+        alert('Please fill all fields');
+        return;
+    }
+    
+    try {
+        const slotRef = doc(db, 'parking_locations', locationId, 'slots', slotId);
+        await updateDoc(slotRef, {
+            status: 'occupied',
+            entryTime: serverTimestamp(),
+            occupiedSince: serverTimestamp(),
+            bookedBy: name,
+            phone: phone,
+            vehicleType: 'Car',
+            vehicleNumber: vehicle,
+            userEmail: 'Admin (VIP)',
+            price: 80
+        });
+        
+        const modals = document.querySelectorAll('div[style*="z-index: 3500"]');
+        modals.forEach(m => m.remove());
+        
+        alert('VIP Booking Successful! Entry timer started automatically.');
+    } catch(err) {
+        console.error(err);
+        alert('Error: ' + err.message);
+    }
 }
 
 window.cancelBooking = async function (locationId, slotId) {

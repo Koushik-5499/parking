@@ -53,6 +53,7 @@ function loadSlots() {
         });
 
         slots.forEach(slot => {
+            if (slot.isVIP || (slot.slotNumber && slot.slotNumber.toString().startsWith('VIP'))) return;
             const slotCard = createSlotCard(slot);
             slotsGrid.appendChild(slotCard);
         });
@@ -79,10 +80,22 @@ function createSlotCard(slot) {
 
     // Clean up stale local storage if slot has a different QR or is available
     if (myBooking && slot.qrCode && slot.qrCode !== myBooking.qrCode) {
+        if (myBooking.bookingTime) {
+            const penaltyEnd = myBooking.bookingTime + 1800000 + 300000;
+            if (Date.now() < penaltyEnd && (Date.now() - myBooking.bookingTime > 1790000)) { 
+                localStorage.setItem('bookingCooldownUntil', penaltyEnd);
+            }
+        }
         delete myBookings[myBookingKey];
         localStorage.setItem('myBookings', JSON.stringify(myBookings));
         myBooking = null;
     } else if (myBooking && status === 'available') {
+        if (myBooking.bookingTime) {
+            const penaltyEnd = myBooking.bookingTime + 1800000 + 300000;
+            if (Date.now() < penaltyEnd && (Date.now() - myBooking.bookingTime > 1790000)) { 
+                localStorage.setItem('bookingCooldownUntil', penaltyEnd);
+            }
+        }
         delete myBookings[myBookingKey];
         localStorage.setItem('myBookings', JSON.stringify(myBookings));
         myBooking = null;
@@ -101,6 +114,18 @@ function createSlotCard(slot) {
 
         card.addEventListener('click', () => openBookingModal(slot));
     } else if (status === 'pending' && isMyBooking) {
+        if (slot.bookingTime) {
+            const diff = 1800000 - (Date.now() - slot.bookingTime);
+            if (diff <= 0) {
+                const timerDiv = document.createElement('div');
+                timerDiv.style.cssText = 'color: #ef4444; font-size: 13px; font-weight: bold; text-align: center; margin-top: auto;';
+                timerDiv.textContent = 'Auto-cancelling...';
+                card.appendChild(timerDiv);
+                setTimeout(() => { if (window.autoCancelMyBooking) window.autoCancelMyBooking(slot.id); }, 100);
+                return card;
+            }
+        }
+
         const btnContainer = document.createElement('div');
         btnContainer.style.cssText = 'margin-top: auto; display: flex; flex-direction: column; gap: 5px;';
 
@@ -108,6 +133,7 @@ function createSlotCard(slot) {
             const timerDiv = document.createElement('div');
             timerDiv.className = 'pending-timer';
             timerDiv.setAttribute('data-booking-time', slot.bookingTime);
+            timerDiv.setAttribute('data-slot-id', slot.id);
             timerDiv.style.cssText = 'color: #ef4444; font-size: 13px; font-weight: bold; text-align: center;';
             btnContainer.appendChild(timerDiv);
         }
@@ -153,6 +179,14 @@ async function handleBooking(e) {
     e.preventDefault();
 
     if (!selectedSlot) return;
+
+    const cooldown = localStorage.getItem('bookingCooldownUntil');
+    if (cooldown && Date.now() < parseInt(cooldown)) {
+        const remainingStr = Math.ceil((parseInt(cooldown) - Date.now()) / 60000);
+        alert(`You recently let a booking expire. You cannot book any other slots for another ${remainingStr} minute(s).`);
+        closeModal();
+        return;
+    }
 
     const name = document.getElementById('bookingName').value.trim();
     const phone = document.getElementById('bookingPhone').value.trim();
@@ -235,7 +269,8 @@ async function handleBooking(e) {
         myBookings[myBookingKey] = {
             qrCode: bookingId,
             name: name,
-            vehicleNumber: vehicleNumber
+            vehicleNumber: vehicleNumber,
+            bookingTime: Date.now()
         };
         localStorage.setItem('myBookings', JSON.stringify(myBookings));
 
@@ -336,6 +371,40 @@ window.cancelMyBooking = async function (slotId) {
     }
 };
 
+window.autoCancelMyBooking = async function (slotId) {
+    try {
+        const slotRef = doc(db, 'parking_locations', selectedLocation, 'slots', slotId);
+
+        await updateDoc(slotRef, {
+            status: 'available',
+            bookedBy: null,
+            phone: null,
+            vehicleType: null,
+            vehicleNumber: null,
+            qrCode: null,
+            bookingId: null,
+            bookingTime: null,
+            userEmail: null,
+            price: null
+        });
+
+        const myBookings = JSON.parse(localStorage.getItem('myBookings') || '{}');
+        const myBookingKey = selectedLocation + '_' + slotId;
+        const b = myBookings[myBookingKey];
+        if (b && b.bookingTime) {
+            const penaltyEnd = b.bookingTime + 1800000 + 300000;
+            if (Date.now() < penaltyEnd) {
+                localStorage.setItem('bookingCooldownUntil', penaltyEnd);
+            }
+        }
+        delete myBookings[myBookingKey];
+        localStorage.setItem('myBookings', JSON.stringify(myBookings));
+
+    } catch (error) {
+        console.error('Auto-cancel failed:', error);
+    }
+};
+
 window.viewMyQR = function (slotId, slotNumber) {
     const myBookings = JSON.parse(localStorage.getItem('myBookings') || '{}');
     const myBookingKey = selectedLocation + '_' + slotId;
@@ -362,7 +431,7 @@ async function checkPendingTimeout() {
                 const now = Date.now();
                 const diff = now - data.bookingTime;
 
-                if (diff > 600000) { // 10 minutes = 600000 ms
+                if (diff > 1800000) { // 30 minutes = 1800000 ms
                     await updateDoc(docSnap.ref, {
                         status: 'available',
                         bookingTime: null,
@@ -387,12 +456,17 @@ async function checkPendingTimeout() {
 setInterval(() => {
     document.querySelectorAll('.pending-timer').forEach(el => {
         const bookingTime = parseInt(el.getAttribute('data-booking-time'));
+        const slotId = el.getAttribute('data-slot-id');
         if (!bookingTime) return;
 
         const now = Date.now();
-        const diff = 600000 - (now - bookingTime);
+        const diff = 1800000 - (now - bookingTime); // 30 minutes
         if (diff <= 0) {
-            el.textContent = "Expired";
+            el.textContent = "Cancelling...";
+            if (el.dataset.triggered !== 'true' && slotId) {
+                el.dataset.triggered = 'true';
+                if (window.autoCancelMyBooking) window.autoCancelMyBooking(slotId);
+            }
         } else {
             const mins = Math.floor(diff / 60000);
             const secs = Math.floor((diff % 60000) / 1000);
