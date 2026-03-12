@@ -663,6 +663,14 @@ window.processExit = async function (locationId, slotId) {
                         <i class="fas fa-money-bill-wave"></i> Cash
                     </button>
                 </div>
+                <div id="onlinePaymentSection" style="display: none; background: white; padding: 20px; border-radius: 8px; margin-bottom: 15px; text-align: center;">
+                    <h3 style="color: #10b981; margin-bottom: 20px; font-size: 18px; font-weight: 600;">Scan QR Code to Pay</h3>
+                    <div id="paymentQRCode" style="display: flex; justify-content: center; margin-bottom: 20px;"></div>
+                    <p style="color: #374151; font-size: 16px; margin-bottom: 20px;">Amount: <strong style="color: #ef4444; font-size: 20px;">₹${finalPrice}</strong></p>
+                    <button id="onlinePaidBtn" style="width: 100%; padding: 14px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px;">
+                        <i class="fas fa-check"></i> Paid
+                    </button>
+                </div>
                 <div id="cashPaymentSection" style="display: none; background: #f9fafb; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: left;">
                     <div style="margin-bottom: 15px;">
                         <label style="display: block; margin-bottom: 5px; color: #374151; font-weight: 600;">Amount to Pay:</label>
@@ -676,7 +684,7 @@ window.processExit = async function (locationId, slotId) {
                         <label style="display: block; margin-bottom: 5px; color: #1e40af; font-weight: 600;">Remaining Amount to Return:</label>
                         <div id="remainingAmount" style="font-size: 22px; color: #1e40af; font-weight: bold;">₹0</div>
                     </div>
-                    <button id="paidBtn" style="width: 100%; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    <button id="cashPaidBtn" style="width: 100%; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
                         <i class="fas fa-check"></i> Paid
                     </button>
                 </div>
@@ -686,9 +694,66 @@ window.processExit = async function (locationId, slotId) {
 
         // Handle Pay Online button
         const payOnlineBtn = receiptModal.querySelector('#payOnlineBtn');
+        const onlinePaymentSection = receiptModal.querySelector('#onlinePaymentSection');
+        
         payOnlineBtn.addEventListener('click', () => {
-            // Redirect to online payment page with amount pre-filled
-            window.location.href = `billing/billing.html?amount=${finalPrice}&bookingId=${slotId}&location=${locationId}`;
+            const paymentButtons = receiptModal.querySelector('#paymentButtons');
+            paymentButtons.style.display = 'none';
+            onlinePaymentSection.style.display = 'block';
+            
+            // Generate QR code for payment with UPI payment link format
+            const upiPaymentString = `upi://pay?pa=koushik4680@oksbi&pn=SmartMetroParking&am=${finalPrice}&cu=INR&tn=Parking-${slotId}`;
+            
+            // Clear previous QR code if any
+            const qrContainer = receiptModal.querySelector('#paymentQRCode');
+            qrContainer.innerHTML = '';
+            
+            // Check if QRCode library is loaded
+            if (typeof QRCode !== 'undefined') {
+                // Generate QR code using QRCode.js
+                new QRCode(qrContainer, {
+                    text: upiPaymentString,
+                    width: 250,
+                    height: 250,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+            } else {
+                // Fallback: show payment data as text
+                qrContainer.innerHTML = `<div style="padding: 20px; background: #fee2e2; border-radius: 8px; color: #991b1b;">
+                    <p style="margin: 0; font-size: 14px;">QR Code library not loaded. Payment ID: ${slotId}</p>
+                </div>`;
+                console.error('QRCode library not loaded');
+            }
+        });
+        
+        // Handle Online Paid button
+        const onlinePaidBtn = receiptModal.querySelector('#onlinePaidBtn');
+        onlinePaidBtn.addEventListener('click', async () => {
+            try {
+                // Save transaction to reports with payment info
+                await addDoc(collection(db, 'payment_transactions'), {
+                    locationId: locationId,
+                    slotId: slotId,
+                    slotNumber: slotData.slotNumber || '',
+                    bookedBy: slotData.bookedBy || 'N/A',
+                    userEmail: slotData.userEmail || 'N/A',
+                    phone: slotData.phone || 'N/A',
+                    vehicleNumber: slotData.vehicleNumber || 'N/A',
+                    amount: finalPrice,
+                    paymentMethod: 'online',
+                    paymentTime: serverTimestamp(),
+                    exitTime: exitDate
+                });
+
+                receiptModal.remove();
+                isScanning = false;
+                alert('Payment completed successfully!');
+            } catch (error) {
+                console.error('Error saving payment:', error);
+                alert('Failed to save payment: ' + error.message);
+            }
         });
 
         // Handle Cash button
@@ -712,9 +777,9 @@ window.processExit = async function (locationId, slotId) {
             remainingAmount.style.color = remaining >= 0 ? '#1e40af' : '#ef4444';
         });
 
-        // Handle Paid button
-        const paidBtn = receiptModal.querySelector('#paidBtn');
-        paidBtn.addEventListener('click', async () => {
+        // Handle Cash Paid button
+        const cashPaidBtn = receiptModal.querySelector('#cashPaidBtn');
+        cashPaidBtn.addEventListener('click', async () => {
             const cashGiven = parseFloat(cashGivenInput.value) || 0;
             
             if (cashGiven < finalPrice) {
