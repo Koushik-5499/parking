@@ -638,7 +638,7 @@ window.processExit = async function (locationId, slotId) {
         const modals = document.querySelectorAll('div[style*="position: fixed"]');
         modals.forEach(modal => modal.remove());
 
-        // Show receipt
+        // Show receipt with payment options
         const receiptModal = document.createElement('div');
         receiptModal.style.cssText = `
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -655,17 +655,98 @@ window.processExit = async function (locationId, slotId) {
                     <p style="margin-bottom: 5px;"><strong>Total Minutes:</strong> ${totalMinutes} Min(s)</p>
                     <p style="margin-bottom: 0;"><strong>Amount to Pay:</strong> <span style="font-size: 20px; color: #ef4444; font-weight: bold;">₹${finalPrice}</span></p>
                 </div>
-                <button style="width: 100%; padding: 12px; background: #6b7280; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
-                    Close
-                </button>
+                <div id="paymentButtons" style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <button id="payOnlineBtn" style="flex: 1; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                        <i class="fas fa-credit-card"></i> Pay Online
+                    </button>
+                    <button id="cashBtn" style="flex: 1; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                        <i class="fas fa-money-bill-wave"></i> Cash
+                    </button>
+                </div>
+                <div id="cashPaymentSection" style="display: none; background: #f9fafb; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: left;">
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; color: #374151; font-weight: 600;">Amount to Pay:</label>
+                        <div style="font-size: 24px; color: #ef4444; font-weight: bold;">₹${finalPrice}</div>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; color: #374151; font-weight: 600;">Cash Given by Customer:</label>
+                        <input type="number" id="cashGivenInput" placeholder="Enter amount" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 16px; box-sizing: border-box;">
+                    </div>
+                    <div style="margin-bottom: 15px; padding: 10px; background: #dbeafe; border-radius: 6px;">
+                        <label style="display: block; margin-bottom: 5px; color: #1e40af; font-weight: 600;">Remaining Amount to Return:</label>
+                        <div id="remainingAmount" style="font-size: 22px; color: #1e40af; font-weight: bold;">₹0</div>
+                    </div>
+                    <button id="paidBtn" style="width: 100%; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                        <i class="fas fa-check"></i> Paid
+                    </button>
+                </div>
             </div>
         `;
         document.body.appendChild(receiptModal);
 
-        const closeBtn = receiptModal.querySelector('button');
-        closeBtn.addEventListener('click', () => {
-            receiptModal.remove();
-            isScanning = false;
+        // Handle Pay Online button
+        const payOnlineBtn = receiptModal.querySelector('#payOnlineBtn');
+        payOnlineBtn.addEventListener('click', () => {
+            // Redirect to online payment page with amount pre-filled
+            window.location.href = `billing/billing.html?amount=${finalPrice}&bookingId=${slotId}&location=${locationId}`;
+        });
+
+        // Handle Cash button
+        const cashBtn = receiptModal.querySelector('#cashBtn');
+        const cashPaymentSection = receiptModal.querySelector('#cashPaymentSection');
+        const paymentButtons = receiptModal.querySelector('#paymentButtons');
+        
+        cashBtn.addEventListener('click', () => {
+            paymentButtons.style.display = 'none';
+            cashPaymentSection.style.display = 'block';
+        });
+
+        // Handle cash input and calculate remaining amount
+        const cashGivenInput = receiptModal.querySelector('#cashGivenInput');
+        const remainingAmount = receiptModal.querySelector('#remainingAmount');
+        
+        cashGivenInput.addEventListener('input', () => {
+            const cashGiven = parseFloat(cashGivenInput.value) || 0;
+            const remaining = cashGiven - finalPrice;
+            remainingAmount.textContent = `₹${remaining >= 0 ? remaining : 0}`;
+            remainingAmount.style.color = remaining >= 0 ? '#1e40af' : '#ef4444';
+        });
+
+        // Handle Paid button
+        const paidBtn = receiptModal.querySelector('#paidBtn');
+        paidBtn.addEventListener('click', async () => {
+            const cashGiven = parseFloat(cashGivenInput.value) || 0;
+            
+            if (cashGiven < finalPrice) {
+                alert('Cash given is less than the amount to pay!');
+                return;
+            }
+
+            try {
+                // Save transaction to reports with payment info
+                await addDoc(collection(db, 'payment_transactions'), {
+                    locationId: locationId,
+                    slotId: slotId,
+                    slotNumber: slotData.slotNumber || '',
+                    bookedBy: slotData.bookedBy || 'N/A',
+                    userEmail: slotData.userEmail || 'N/A',
+                    phone: slotData.phone || 'N/A',
+                    vehicleNumber: slotData.vehicleNumber || 'N/A',
+                    amount: finalPrice,
+                    cashGiven: cashGiven,
+                    changeReturned: cashGiven - finalPrice,
+                    paymentMethod: 'cash',
+                    paymentTime: serverTimestamp(),
+                    exitTime: exitDate
+                });
+
+                receiptModal.remove();
+                isScanning = false;
+                alert('Payment completed successfully!');
+            } catch (error) {
+                console.error('Error saving payment:', error);
+                alert('Failed to save payment: ' + error.message);
+            }
         });
 
     } catch (error) {
@@ -715,6 +796,7 @@ async function filterData() {
         tableBody.innerHTML = '';
         
         let hasData = false;
+        let reportData = [];
 
         querySnapshot.forEach(docSnap => {
             const data = docSnap.data();
@@ -729,31 +811,54 @@ async function filterData() {
 
             if (reportDate && reportDate >= fromDate && reportDate <= toDate) {
                 hasData = true;
-                let entryDate = data.entryTime?.toDate ? data.entryTime.toDate().toLocaleString() : 
-                               (data.entryTime ? new Date(data.entryTime).toLocaleString() : 'N/A');
-                let exitD = reportDate.toLocaleString();
+                let entryDateObj = data.entryTime?.toDate ? data.entryTime.toDate() : 
+                                   (data.entryTime ? new Date(data.entryTime) : null);
                 
-                let locationName = 'N/A';
-                if (data.locationId === 'rathinam_main_gate') locationName = 'Rathinam Main Gate';
-                else if (data.locationId === 'rathinam_gate1') locationName = 'Gate 1';
-                else if (data.locationId === 'rathinam_gate3') locationName = 'Gate 3';
-
-                let row = `
-                <tr style="border-bottom: 1px solid #e5e7eb;">
-                    <td style="padding: 12px;">${locationName}</td>
-                    <td style="padding: 12px;">${data.bookedBy || 'N/A'}</td>
-                    <td style="padding: 12px;">${data.userEmail || 'N/A'}</td>
-                    <td style="padding: 12px;">${data.phone || 'N/A'}</td>
-                    <td style="padding: 12px;">${data.vehicleNumber || 'N/A'}</td>
-                    <td style="padding: 12px;">${entryDate}</td>
-                    <td style="padding: 12px;">${exitD}</td>
-                    <td style="padding: 12px;">${data.slotNumber || 'N/A'}</td>
-                    <td style="padding: 12px; color: #10b981; font-weight: bold;">₹${data.price || 0}</td>
-                </tr>
-                `;
-
-                tableBody.innerHTML += row;
+                reportData.push({
+                    data: data,
+                    reportDate: reportDate,
+                    entryDateObj: entryDateObj
+                });
             }
+        });
+
+        // Sort ascending by entry time
+        reportData.sort((a, b) => {
+            if (!a.entryDateObj && !b.entryDateObj) return 0;
+            if (!a.entryDateObj) return 1; // Put ones without entry time at the end
+            if (!b.entryDateObj) return -1;
+            return a.entryDateObj - b.entryDateObj;
+        });
+
+        reportData.forEach(item => {
+            const data = item.data;
+            const reportDate = item.reportDate;
+            const entryDateObj = item.entryDateObj;
+
+            const formatOptions = { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true };
+            let entryDate = entryDateObj ? entryDateObj.toLocaleString('en-US', formatOptions) : 'N/A';
+            let exitD = reportDate.toLocaleString('en-US', formatOptions);
+            
+            let locationName = 'N/A';
+            if (data.locationId === 'rathinam_main_gate') locationName = 'Rathinam Main Gate';
+            else if (data.locationId === 'rathinam_gate1') locationName = 'Gate 1';
+            else if (data.locationId === 'rathinam_gate3') locationName = 'Gate 3';
+
+            let row = `
+            <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px;">${locationName}</td>
+                <td style="padding: 12px;">${data.bookedBy || 'N/A'}</td>
+                <td style="padding: 12px;">${data.userEmail || 'N/A'}</td>
+                <td style="padding: 12px;">${data.phone || 'N/A'}</td>
+                <td style="padding: 12px;">${data.vehicleNumber || 'N/A'}</td>
+                <td style="padding: 12px;">${entryDate}</td>
+                <td style="padding: 12px;">${exitD}</td>
+                <td style="padding: 12px;">${data.slotNumber || 'N/A'}</td>
+                <td style="padding: 12px; color: #10b981; font-weight: bold;">₹${data.price || 0}</td>
+            </tr>
+            `;
+
+            tableBody.innerHTML += row;
         });
 
         if (!hasData) {

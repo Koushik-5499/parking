@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -70,10 +71,21 @@
             margin-bottom: 10px;
         }
 
-        .stat-card.total i { color: #2563eb; }
-        .stat-card.available i { color: #10b981; }
-        .stat-card.booked i { color: #f59e0b; }
-        .stat-card.occupied i { color: #ef4444; }
+        .stat-card.total i {
+            color: #2563eb;
+        }
+
+        .stat-card.available i {
+            color: #10b981;
+        }
+
+        .stat-card.booked i {
+            color: #f59e0b;
+        }
+
+        .stat-card.occupied i {
+            color: #ef4444;
+        }
 
         .stat-value {
             font-size: 36px;
@@ -207,6 +219,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
@@ -260,19 +273,22 @@
                 <h2 class="section-title">
                     <i class="fas fa-qrcode"></i> Scanner & Code Entry
                 </h2>
-                <button id="toggleScannerBtn" style="background: #2563eb; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; width: 100%; justify-content: center; margin-bottom: 20px;">
+                <button id="toggleScannerBtn"
+                    style="background: #2563eb; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; width: 100%; justify-content: center; margin-bottom: 20px;">
                     <i class="fas fa-camera"></i> Open QR Code Scanner
                 </button>
                 <div id="reader-container" style="display: none; margin-bottom: 20px;">
                     <div id="reader"></div>
                 </div>
-                
+
                 <div style="border-top: 2px dashed #e5e7eb; margin: 20px 0;"></div>
-                
+
                 <h3 style="font-size: 16px; margin-bottom: 10px; color: #374151;">Manual Code Entry</h3>
                 <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                    <input type="text" id="manualCodeInput" placeholder="Enter Booking ID" style="flex: 1; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; font-size: 14px;">
-                    <button id="manualCodeSubmit" style="background: #10b981; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: 600; cursor: pointer;">
+                    <input type="text" id="manualCodeInput" placeholder="Enter Booking ID"
+                        style="flex: 1; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; font-size: 14px;">
+                    <button id="manualCodeSubmit"
+                        style="background: #10b981; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: 600; cursor: pointer;">
                         Submit
                     </button>
                 </div>
@@ -284,27 +300,35 @@
                 <h2 class="section-title">
                     <i class="fas fa-file-excel"></i> Export Reports
                 </h2>
-                <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; flex-direction: row; justify-content: flex-start; align-items: flex-end;">
+                <div
+                    style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; flex-direction: row; justify-content: flex-start; align-items: flex-end;">
                     <div style="flex: 1; min-width: 200px;">
-                        <label style="display: block; margin-bottom: 5px; color: #374151; font-weight: 600;">From Date & Time</label>
-                        <input type="datetime-local" id="reportFrom" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box;">
+                        <label style="display: block; margin-bottom: 5px; color: #374151; font-weight: 600;">From Date &
+                            Time</label>
+                        <input type="datetime-local" id="reportFrom"
+                            style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box;">
                     </div>
                     <div style="flex: 1; min-width: 200px;">
-                        <label style="display: block; margin-bottom: 5px; color: #374151; font-weight: 600;">To Date & Time</label>
-                        <input type="datetime-local" id="reportTo" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box;">
+                        <label style="display: block; margin-bottom: 5px; color: #374151; font-weight: 600;">To Date &
+                            Time</label>
+                        <input type="datetime-local" id="reportTo"
+                            style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box;">
                     </div>
                     <div style="display: flex; gap: 10px;">
-                        <button id="showReportBtn" style="background: #2563eb; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; justify-content: center; height: 42px;">
+                        <button id="showReportBtn"
+                            style="background: #2563eb; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; justify-content: center; height: 42px;">
                             <i class="fas fa-list"></i> Show Report
                         </button>
-                        <button id="exportExcelBtn" style="background: #10b981; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; justify-content: center; height: 42px;">
+                        <button id="exportExcelBtn"
+                            style="background: #10b981; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; justify-content: center; height: 42px;">
                             <i class="fas fa-download"></i> Export Excel
                         </button>
                     </div>
                 </div>
 
                 <div style="overflow-x: auto;">
-                    <table id="reportTable" style="width: 100%; border-collapse: collapse; margin-top: 20px; display: none;">
+                    <table id="reportTable"
+                        style="width: 100%; border-collapse: collapse; margin-top: 20px; display: none;">
                         <thead>
                             <tr style="background-color: #f3f4f6; color: #374151; text-align: left;">
                                 <th style="padding: 12px; border-bottom: 2px solid #e5e7eb;">Gate Name</th>
@@ -332,5 +356,7 @@
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script type="module" src="admin-dashboard-script.js"></script>
+    <script type="module" src="chatbot.js"></script>
 </body>
+
 </html>

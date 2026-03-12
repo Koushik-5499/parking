@@ -336,14 +336,14 @@ async function handleBookingSubmit() {
     const name = document.getElementById('bookingName').value.trim();
     const phone = document.getElementById('bookingPhone').value.trim();
     const vehicleNumber = document.getElementById('bookingVehicleNumber')?.value.trim() || 'N/A';
-    const vehicleType = document.querySelector('input[name="vehicleType"]:checked')?.value;
+    const vehicleType = 'Car';
 
-    if (!name || !phone || !vehicleType) {
+    if (!name || !phone) {
         alert('Please fill all required fields');
         return;
     }
 
-    const price = vehicleType === 'Car' ? 80 : 40;
+    const price = 80;
     const location = currentBookingSlot.location || 'Rathinam Main Gate';
 
     const confirmBtn = document.querySelector('.confirm-btn');
