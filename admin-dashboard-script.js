@@ -183,7 +183,13 @@ function loadSlots(location) {
 
         slots.forEach(slot => {
             const slotDiv = document.createElement('div');
-            const status = slot.status || 'available';
+            let status = slot.status || 'available';
+            
+            // Treat payment_pending as occupied (red)
+            if (status === 'payment_pending') {
+                status = 'occupied';
+            }
+            
             slotDiv.className = `slot-mini ${status}`;
             slotDiv.style.cursor = 'pointer';
             slotDiv.textContent = slot.slotNumber;
@@ -386,7 +392,8 @@ function showScanResult(success, message) {
 
 function showSlotDetails(locationId, slot) {
     const statusColor = slot.status === 'available' ? '#10b981' :
-        slot.status === 'pending' ? '#f59e0b' : '#ef4444';
+        slot.status === 'pending' ? '#f59e0b' : 
+        slot.status === 'payment_pending' ? '#f59e0b' : '#ef4444';
 
     const modal = document.createElement('div');
     modal.style.cssText = `
@@ -409,7 +416,7 @@ function showSlotDetails(locationId, slot) {
                 <p style="margin-bottom: 10px;"><strong>Status:</strong> <span style="color: ${statusColor}; text-transform: uppercase;">${slot.status}</span></p>
     `;
 
-    if (slot.status === 'pending' || slot.status === 'occupied') {
+    if (slot.status === 'pending' || slot.status === 'occupied' || slot.status === 'payment_pending') {
         detailsHTML += `
                 <p style="margin-bottom: 10px;"><strong>Booked By:</strong> ${slot.bookedBy || 'N/A'}</p>
                 <p style="margin-bottom: 10px;"><strong>Phone:</strong> ${slot.phone || 'N/A'}</p>
@@ -451,6 +458,14 @@ function showSlotDetails(locationId, slot) {
                 style="width: 100%; padding: 12px; background: #ef4444; color: white; 
                 border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-bottom: 10px;">
                 <i class="fas fa-times-circle"></i> Cancel Booking
+            </button>
+        `;
+    } else if (slot.status === 'payment_pending') {
+        detailsHTML += `
+            <button onclick="resetPaymentPendingSlot('${locationId}', '${slot.id}')" 
+                style="width: 100%; padding: 12px; background: #f59e0b; color: white; 
+                border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-bottom: 10px;">
+                <i class="fas fa-undo"></i> Reset Slot (Clear Payment Pending)
             </button>
         `;
     } else if (slot.status === 'occupied') {
@@ -601,17 +616,10 @@ window.processExit = async function (locationId, slotId) {
         let totalMinutes = Math.max(1, Math.round(diffMs / (1000 * 60)));
         const finalPrice = Math.round(totalMinutes * (80 / 60));
 
+        // DON'T update slot to available yet - keep it occupied until payment is done
         await updateDoc(slotRef, {
-            status: 'available',
             exitTime: exitDate,
-            price: finalPrice,
-            bookedBy: null,
-            phone: null,
-            vehicleType: null,
-            vehicleNumber: null,
-            qrCode: null,
-            bookingId: null,
-            entryTime: null
+            price: finalPrice
         });
 
         // Add to reports collection
@@ -667,6 +675,9 @@ window.processExit = async function (locationId, slotId) {
                     <h3 style="color: #10b981; margin-bottom: 20px; font-size: 18px; font-weight: 600;">Scan QR Code to Pay</h3>
                     <div id="paymentQRCode" style="display: flex; justify-content: center; margin-bottom: 20px;"></div>
                     <p style="color: #374151; font-size: 16px; margin-bottom: 20px;">Amount: <strong style="color: #ef4444; font-size: 20px;">₹${finalPrice}</strong></p>
+                    <button id="payByCustomerBtn" style="width: 100%; padding: 14px; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px; margin-bottom: 10px;">
+                        <i class="fas fa-user"></i> Pay by Customer
+                    </button>
                     <button id="onlinePaidBtn" style="width: 100%; padding: 14px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px;">
                         <i class="fas fa-check"></i> Paid
                     </button>
@@ -747,12 +758,100 @@ window.processExit = async function (locationId, slotId) {
                     exitTime: exitDate
                 });
 
+                // NOW clear the slot and make it available
+                await updateDoc(slotRef, {
+                    status: 'available',
+                    bookedBy: null,
+                    phone: null,
+                    vehicleType: null,
+                    vehicleNumber: null,
+                    qrCode: null,
+                    bookingId: null,
+                    entryTime: null,
+                    userEmail: null
+                });
+
                 receiptModal.remove();
                 isScanning = false;
                 alert('Payment completed successfully!');
             } catch (error) {
                 console.error('Error saving payment:', error);
                 alert('Failed to save payment: ' + error.message);
+            }
+        });
+        
+        // Handle Pay by Customer button
+        const payByCustomerBtn = receiptModal.querySelector('#payByCustomerBtn');
+        payByCustomerBtn.addEventListener('click', async () => {
+            try {
+                // Update slot status to payment_pending
+                await updateDoc(slotRef, {
+                    status: 'payment_pending',
+                    paymentPending: true
+                });
+                
+                // Create a payment request for the customer
+                const paymentRequestRef = collection(db, 'payment_requests');
+                const paymentRequestDoc = await addDoc(paymentRequestRef, {
+                    locationId: locationId,
+                    slotId: slotId,
+                    slotNumber: slotData.slotNumber || '',
+                    bookedBy: slotData.bookedBy || 'N/A',
+                    userEmail: slotData.userEmail || 'N/A',
+                    phone: slotData.phone || 'N/A',
+                    vehicleNumber: slotData.vehicleNumber || 'N/A',
+                    amount: finalPrice,
+                    status: 'pending',
+                    requestTime: serverTimestamp(),
+                    exitTime: exitDate,
+                    entryTime: entryDate
+                });
+
+                // Hide payment buttons and show waiting message
+                paymentButtons.style.display = 'none';
+                onlinePaymentSection.style.display = 'none';
+                
+                const waitingSection = document.createElement('div');
+                waitingSection.id = 'waitingSection';
+                waitingSection.style.cssText = 'background: #fef3c7; padding: 20px; border-radius: 8px; text-align: center;';
+                waitingSection.innerHTML = `
+                    <div style="margin-bottom: 15px;">
+                        <i class="fas fa-clock" style="font-size: 48px; color: #f59e0b;"></i>
+                    </div>
+                    <h3 style="color: #92400e; margin-bottom: 10px;">Waiting for Customer Payment</h3>
+                    <p style="color: #78350f; margin-bottom: 15px;">Payment request sent to ${userDisplay}</p>
+                    <p style="color: #78350f; font-size: 14px;">This popup will close automatically when payment is completed.</p>
+                `;
+                
+                receiptModal.querySelector('.modal-content').appendChild(waitingSection);
+                
+                // Listen for payment completion
+                const unsubscribe = onSnapshot(doc(db, 'payment_requests', paymentRequestDoc.id), async (docSnap) => {
+                    if (docSnap.exists() && docSnap.data().status === 'completed') {
+                        unsubscribe();
+                        
+                        // Update slot to available
+                        await updateDoc(slotRef, {
+                            status: 'available',
+                            paymentPending: false,
+                            bookedBy: null,
+                            phone: null,
+                            vehicleType: null,
+                            vehicleNumber: null,
+                            qrCode: null,
+                            bookingId: null,
+                            entryTime: null
+                        });
+                        
+                        receiptModal.remove();
+                        isScanning = false;
+                        alert('Payment completed by customer!');
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Error creating payment request:', error);
+                alert('Failed to send payment request: ' + error.message);
             }
         });
 
@@ -805,6 +904,19 @@ window.processExit = async function (locationId, slotId) {
                     exitTime: exitDate
                 });
 
+                // NOW clear the slot and make it available
+                await updateDoc(slotRef, {
+                    status: 'available',
+                    bookedBy: null,
+                    phone: null,
+                    vehicleType: null,
+                    vehicleNumber: null,
+                    qrCode: null,
+                    bookingId: null,
+                    entryTime: null,
+                    userEmail: null
+                });
+
                 receiptModal.remove();
                 isScanning = false;
                 alert('Payment completed successfully!');
@@ -853,8 +965,22 @@ async function filterData() {
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
         btn.disabled = true;
 
+        // Fetch reports
         const reportsRef = collection(db, 'reports');
         const querySnapshot = await getDocs(reportsRef);
+        
+        // Fetch payment transactions
+        const paymentsRef = collection(db, 'payment_transactions');
+        const paymentsSnapshot = await getDocs(paymentsRef);
+        
+        // Create a map of slotId -> paymentMethod
+        const paymentMethodMap = {};
+        paymentsSnapshot.forEach(doc => {
+            const payment = doc.data();
+            if (payment.slotId) {
+                paymentMethodMap[payment.slotId] = payment.paymentMethod || 'N/A';
+            }
+        });
         
         const reportTable = document.getElementById("reportTable");
         const tableBody = document.getElementById("tableBody");
@@ -909,6 +1035,11 @@ async function filterData() {
             else if (data.locationId === 'rathinam_gate1') locationName = 'Gate 1';
             else if (data.locationId === 'rathinam_gate3') locationName = 'Gate 3';
 
+            // Get payment method from map
+            const paymentMethod = paymentMethodMap[data.slotId] || 'N/A';
+            const methodColor = paymentMethod === 'online' ? '#2563eb' : paymentMethod === 'cash' ? '#10b981' : '#6b7280';
+            const methodText = paymentMethod === 'online' ? 'Online' : paymentMethod === 'cash' ? 'Cash' : 'N/A';
+
             let row = `
             <tr style="border-bottom: 1px solid #e5e7eb;">
                 <td style="padding: 12px;">${locationName}</td>
@@ -920,6 +1051,7 @@ async function filterData() {
                 <td style="padding: 12px;">${exitD}</td>
                 <td style="padding: 12px;">${data.slotNumber || 'N/A'}</td>
                 <td style="padding: 12px; color: #10b981; font-weight: bold;">₹${data.price || 0}</td>
+                <td style="padding: 12px; color: ${methodColor}; font-weight: bold;">${methodText}</td>
             </tr>
             `;
 
@@ -962,3 +1094,53 @@ function exportExcel() {
         alert('Failed to export: ' + error.message);
     }
 }
+
+// Reset payment_pending slot to available
+window.resetPaymentPendingSlot = async function(locationId, slotId) {
+    if (!confirm('Are you sure you want to reset this slot? This will clear the payment pending status and make the slot available again.')) {
+        return;
+    }
+
+    try {
+        const slotRef = doc(db, 'parking_locations', locationId, 'slots', slotId);
+        
+        // Update slot to available and clear all booking data
+        await updateDoc(slotRef, {
+            status: 'available',
+            paymentPending: false,
+            bookedBy: null,
+            phone: null,
+            vehicleType: null,
+            vehicleNumber: null,
+            qrCode: null,
+            bookingId: null,
+            entryTime: null,
+            userEmail: null,
+            price: null
+        });
+
+        // Cancel any pending payment requests for this slot
+        const paymentRequestsRef = collection(db, 'payment_requests');
+        const q = query(paymentRequestsRef, 
+            where('slotId', '==', slotId),
+            where('status', '==', 'pending')
+        );
+        
+        const querySnapshot = await getDocs(q);
+        querySnapshot.forEach(async (docSnap) => {
+            await updateDoc(doc(db, 'payment_requests', docSnap.id), {
+                status: 'cancelled'
+            });
+        });
+
+        alert('Slot reset successfully! The slot is now available.');
+
+        // Close modal
+        const modals = document.querySelectorAll('div[style*="position: fixed"]');
+        modals.forEach(modal => modal.remove());
+
+    } catch (error) {
+        console.error('Error resetting slot:', error);
+        alert('Failed to reset slot: ' + error.message);
+    }
+};

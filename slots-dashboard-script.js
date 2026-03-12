@@ -13,7 +13,8 @@ import {
     getDocs,
     query,
     where,
-    serverTimestamp
+    serverTimestamp,
+    addDoc
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -91,12 +92,20 @@ function loadSlots() {
 
 function createSlotCard(slot) {
     const card = document.createElement('div');
-    const status = slot.status || 'available';
-    card.className = `slot-card ${status}`;
+    let status = slot.status || 'available';
+    
+    // Check if payment pending for current user
+    const isPaymentPending = status === 'payment_pending' && 
+                             currentUser && 
+                             (slot.userEmail === currentUser.email || slot.bookedBy === currentUser.email);
+    
+    // Display payment_pending as occupied (red)
+    const displayStatus = status === 'payment_pending' ? 'occupied' : status;
+    card.className = `slot-card ${displayStatus}`;
 
     card.innerHTML = `
         <div class="slot-number">Slot ${slot.slotNumber}</div>
-        <div class="slot-status" style="margin-bottom: 10px;">${status}</div>
+        <div class="slot-status" style="margin-bottom: 10px;">${isPaymentPending ? 'PAYMENT PENDING' : status.toUpperCase()}</div>
     `;
 
     const myBookings = JSON.parse(localStorage.getItem('myBookings') || '{}');
@@ -139,6 +148,16 @@ function createSlotCard(slot) {
     } else if (myBooking) {
         isMyBooking = true;
         bData = myBooking;
+    }
+    
+    // Handle payment_pending slots
+    if (isPaymentPending) {
+        const payBtn = document.createElement('button');
+        payBtn.style.cssText = 'width: 100%; font-size: 14px; padding: 10px; margin-top: auto; border: none; border-radius: 8px; cursor: pointer; background: #ef4444; color: white; font-weight: bold; transition: all 0.3s ease;';
+        payBtn.innerHTML = '<i class="fas fa-credit-card"></i> Pay Now';
+        payBtn.onclick = (e) => { e.stopPropagation(); window.payForSlot(slot.id); };
+        card.appendChild(payBtn);
+        return card;
     }
 
     if (status === 'available') {
@@ -199,7 +218,25 @@ function createSlotCard(slot) {
     return card;
 }
 
-function openBookingModal(slot) {
+async function openBookingModal(slot) {
+    // Check if user has any payment pending slots
+    try {
+        const paymentRequestsRef = collection(db, 'payment_requests');
+        const q = query(paymentRequestsRef, 
+            where('userEmail', '==', currentUser.email),
+            where('status', '==', 'pending')
+        );
+        
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+            alert('⚠️ You have a pending payment! Please complete your payment before booking another slot.');
+            return;
+        }
+    } catch (error) {
+        console.error('Error checking payment requests:', error);
+    }
+    
     selectedSlot = slot;
     document.getElementById('modalSlotNumber').value = `Slot ${slot.slotNumber}`;
     document.getElementById('bookingForm').reset();
@@ -508,3 +545,127 @@ setInterval(() => {
         }
     });
 }, 1000);
+
+
+// Pay for slot directly (when payment_pending)
+window.payForSlot = async function(slotId) {
+    try {
+        // Find the payment request for this slot
+        const paymentRequestsRef = collection(db, 'payment_requests');
+        const q = query(paymentRequestsRef, 
+            where('slotId', '==', slotId),
+            where('userEmail', '==', currentUser.email),
+            where('status', '==', 'pending')
+        );
+        
+        const querySnapshot = await getDocs(q);
+        
+        if (querySnapshot.empty) {
+            alert('Payment request not found!');
+            return;
+        }
+        
+        const requestDoc = querySnapshot.docs[0];
+        const requestData = requestDoc.data();
+        const amount = requestData.amount;
+        
+        // UPI Payment Details
+        const upiID = "koushik4680@oksbi";
+        const payeeName = "Smart Metro Parking";
+        const transactionNote = `Parking-Slot${requestData.slotNumber}-${requestData.locationId}`;
+        
+        // Create UPI payment URL
+        const upiURL = `upi://pay?pa=${upiID}&pn=${encodeURIComponent(payeeName)}&am=${amount}&cu=INR&tn=${encodeURIComponent(transactionNote)}`;
+        
+        // Show confirmation dialog
+        if (!confirm(`You will be redirected to your UPI app to pay ₹${amount}.\n\nAfter completing payment, please return here and click "Payment Done" to confirm.`)) {
+            return;
+        }
+        
+        // Open UPI payment app
+        window.location.href = upiURL;
+        
+        // Show payment confirmation dialog after a delay (user will return after payment)
+        setTimeout(() => {
+            showPaymentConfirmation(requestDoc.id, requestData);
+        }, 3000);
+        
+    } catch (error) {
+        console.error('Payment error:', error);
+        alert('Payment failed: ' + error.message);
+    }
+};
+
+// Show payment confirmation dialog
+function showPaymentConfirmation(requestId, requestData) {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+    `;
+    
+    modal.innerHTML = `
+        <div style="background: white; padding: 30px; border-radius: 12px; max-width: 400px; width: 90%; text-align: center;">
+            <div style="margin-bottom: 20px;">
+                <i class="fas fa-credit-card" style="font-size: 48px; color: #2563eb;"></i>
+            </div>
+            <h2 style="color: #374151; margin-bottom: 15px;">Payment Status</h2>
+            <p style="color: #6b7280; margin-bottom: 20px;">Have you completed the payment of ₹${requestData.amount}?</p>
+            <div style="display: flex; gap: 10px;">
+                <button id="paymentDoneBtn" style="flex: 1; padding: 14px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px;">
+                    <i class="fas fa-check"></i> Payment Done
+                </button>
+                <button id="paymentCancelBtn" style="flex: 1; padding: 14px; background: #6b7280; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px;">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Handle Payment Done button
+    document.getElementById('paymentDoneBtn').addEventListener('click', async () => {
+        try {
+            // Save payment transaction
+            await addDoc(collection(db, 'payment_transactions'), {
+                locationId: requestData.locationId,
+                slotId: requestData.slotId,
+                slotNumber: requestData.slotNumber || '',
+                bookedBy: requestData.bookedBy || 'N/A',
+                userEmail: requestData.userEmail || 'N/A',
+                phone: requestData.phone || 'N/A',
+                vehicleNumber: requestData.vehicleNumber || 'N/A',
+                amount: requestData.amount,
+                paymentMethod: 'online',
+                paymentTime: serverTimestamp(),
+                exitTime: requestData.exitTime
+            });
+            
+            // Update request status to completed
+            await updateDoc(doc(db, 'payment_requests', requestId), {
+                status: 'completed',
+                paidTime: serverTimestamp()
+            });
+            
+            modal.remove();
+            alert('✅ Payment confirmed! Thank you.');
+        } catch (error) {
+            console.error('Error confirming payment:', error);
+            alert('Failed to confirm payment: ' + error.message);
+        }
+    });
+    
+    // Handle Cancel button
+    document.getElementById('paymentCancelBtn').addEventListener('click', () => {
+        modal.remove();
+    });
+}
