@@ -816,7 +816,7 @@ window.payForSlot = async function(slotId) {
         const amount = requestData.amount;
         
         // UPI Payment Details
-        const upiID = "7200746814@pthdfc";
+        const upiID = "koushik4680@oksbi";
         const payeeName = "Smart Metro Parking";
         const transactionNote = `Parking-Slot${requestData.slotNumber}-${requestData.locationId}`;
         
