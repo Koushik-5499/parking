@@ -34,6 +34,17 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 const ADMIN_EMAIL = "koushik123@gmail.com";
+
+// Format date as dd-mm-yyyy HH:MM
+function fmtDate(d) {
+    if (!d) return 'N/A';
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    const hh = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    return `${dd}-${mm}-${yyyy} ${hh}:${min}`;
+}
 let currentLocation = 'rathinam_main_gate';
 let html5QrCode;
 let isScanning = false;
@@ -361,7 +372,7 @@ function showScanResult(success, message) {
 
     const bgColor = success ? '#d1fae5' : '#fee2e2';
     const textColor = success ? '#065f46' : '#991b1b';
-    const borderColor = success ? '#10b981' : '#ef4444';
+    const borderColor = success ? '#38bdf8' : '#ef4444';
     const icon = success ? 'check-circle' : 'times-circle';
 
     modal.innerHTML = `
@@ -391,7 +402,7 @@ function showScanResult(success, message) {
 }
 
 function showSlotDetails(locationId, slot) {
-    const statusColor = slot.status === 'available' ? '#10b981' :
+    const statusColor = slot.status === 'available' ? '#38bdf8' :
         slot.status === 'pending' ? '#f59e0b' : 
         slot.status === 'payment_pending' ? '#f59e0b' : '#ef4444';
 
@@ -426,13 +437,13 @@ function showSlotDetails(locationId, slot) {
                 <p style="margin-bottom: 10px;"><strong>QR Code:</strong> ${slot.qrCode || 'N/A'}</p>
         `;
         if (slot.entryTime) {
-            let entryDate = slot.entryTime.toDate ? slot.entryTime.toDate().toLocaleString() : new Date(slot.entryTime).toLocaleString();
+            let entryDate = fmtDate(slot.entryTime.toDate ? slot.entryTime.toDate() : new Date(slot.entryTime));
             detailsHTML += `<p style="margin-bottom: 10px;"><strong>Entry Time:</strong> ${entryDate}</p>`;
         }
     } else if (slot.status === 'available' && slot.exitTime) {
         // Show historical info if needed
-        let entryDate = slot.entryTime?.toDate ? slot.entryTime.toDate().toLocaleString() : "N/A";
-        let exitDate = slot.exitTime?.toDate ? slot.exitTime.toDate().toLocaleString() : "N/A";
+        let entryDate = slot.entryTime?.toDate ? fmtDate(slot.entryTime.toDate()) : "N/A";
+        let exitDate = slot.exitTime?.toDate ? fmtDate(slot.exitTime.toDate()) : "N/A";
         detailsHTML += `
                 <p style="margin-bottom: 10px;"><strong>Last Entry:</strong> ${entryDate}</p>
                 <p style="margin-bottom: 10px;"><strong>Last Exit:</strong> ${exitDate}</p>
@@ -471,7 +482,7 @@ function showSlotDetails(locationId, slot) {
     } else if (slot.status === 'occupied') {
         detailsHTML += `
             <button onclick="processExit('${locationId}', '${slot.id}')" 
-                style="width: 100%; padding: 12px; background: #10b981; color: white; 
+                style="width: 100%; padding: 12px; background: #38bdf8; color: white; 
                 border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-bottom: 10px;">
                 <i class="fas fa-sign-out-alt"></i> Exit Vehicle
             </button>
@@ -516,10 +527,10 @@ window.openAdminBookingModal = function(locationId, slotId, slotNumber) {
             <div style="margin-bottom: 20px;">
                 <label style="display: block; margin-bottom: 5px; color: #374151; font-weight: 600;">Vehicle Number</label>
                 <input type="text" id="adminBookVehicle" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px;">
-                <small style="display: block; color: #10b981; font-weight: bold; margin-top: 8px;">* Per Hour: ₹80</small>
+                <small style="display: block; color: #38bdf8; font-weight: bold; margin-top: 8px;">* Per Hour: ₹80</small>
             </div>
             <div style="display: flex; gap: 10px;">
-                <button onclick="submitAdminBooking('${locationId}', '${slotId}')" style="flex: 1; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                <button onclick="submitAdminBooking('${locationId}', '${slotId}')" style="flex: 1; padding: 12px; background: #38bdf8; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
                     <i class="fas fa-check"></i> Book & Start Entry
                 </button>
                 <button onclick="this.parentElement.parentElement.parentElement.remove()" style="flex: 1; padding: 12px; background: #6b7280; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
@@ -655,11 +666,11 @@ window.processExit = async function (locationId, slotId) {
         const userDisplay = slotData.userEmail && slotData.userEmail !== 'Guest' ? slotData.userEmail : (slotData.bookedBy || 'N/A');
         receiptModal.innerHTML = `
             <div class="modal-content" style="text-align: center; background: white; padding: 30px; border-radius: 12px; max-width: 400px; width: 90%;">
-                <h2 style="color: #10b981; margin-bottom: 20px;"><i class="fas fa-check-circle"></i> Parking Completed</h2>
+                <h2 style="color: #38bdf8; margin-bottom: 20px;"><i class="fas fa-check-circle"></i> Parking Completed</h2>
                 <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: left;">
                     <p style="margin-bottom: 5px;"><strong>User Email:</strong> ${userDisplay}</p>
-                    <p style="margin-bottom: 5px;"><strong>Entry Time:</strong> ${entryDate.toLocaleString()}</p>
-                    <p style="margin-bottom: 5px;"><strong>Exit Time:</strong> ${exitDate.toLocaleString()}</p>
+                    <p style="margin-bottom: 5px;"><strong>Entry Time:</strong> ${fmtDate(entryDate)}</p>
+                    <p style="margin-bottom: 5px;"><strong>Exit Time:</strong> ${fmtDate(exitDate)}</p>
                     <p style="margin-bottom: 5px;"><strong>Total Minutes:</strong> ${totalMinutes} Min(s)</p>
                     <p style="margin-bottom: 0;"><strong>Amount to Pay:</strong> <span style="font-size: 20px; color: #ef4444; font-weight: bold;">₹${finalPrice}</span></p>
                 </div>
@@ -667,18 +678,18 @@ window.processExit = async function (locationId, slotId) {
                     <button id="payOnlineBtn" style="flex: 1; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
                         <i class="fas fa-credit-card"></i> Pay Online
                     </button>
-                    <button id="cashBtn" style="flex: 1; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    <button id="cashBtn" style="flex: 1; padding: 12px; background: #38bdf8; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
                         <i class="fas fa-money-bill-wave"></i> Cash
                     </button>
                 </div>
                 <div id="onlinePaymentSection" style="display: none; background: white; padding: 20px; border-radius: 8px; margin-bottom: 15px; text-align: center;">
-                    <h3 style="color: #10b981; margin-bottom: 20px; font-size: 18px; font-weight: 600;">Scan QR Code to Pay</h3>
+                    <h3 style="color: #38bdf8; margin-bottom: 20px; font-size: 18px; font-weight: 600;">Scan QR Code to Pay</h3>
                     <div id="paymentQRCode" style="display: flex; justify-content: center; margin-bottom: 20px;"></div>
                     <p style="color: #374151; font-size: 16px; margin-bottom: 20px;">Amount: <strong style="color: #ef4444; font-size: 20px;">₹${finalPrice}</strong></p>
                     <button id="payByCustomerBtn" style="width: 100%; padding: 14px; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px; margin-bottom: 10px;">
                         <i class="fas fa-user"></i> Pay by Customer
                     </button>
-                    <button id="onlinePaidBtn" style="width: 100%; padding: 14px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px;">
+                    <button id="onlinePaidBtn" style="width: 100%; padding: 14px; background: #38bdf8; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px;">
                         <i class="fas fa-check"></i> Paid
                     </button>
                 </div>
@@ -695,7 +706,7 @@ window.processExit = async function (locationId, slotId) {
                         <label style="display: block; margin-bottom: 5px; color: #1e40af; font-weight: 600;">Remaining Amount to Return:</label>
                         <div id="remainingAmount" style="font-size: 22px; color: #1e40af; font-weight: bold;">₹0</div>
                     </div>
-                    <button id="cashPaidBtn" style="width: 100%; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    <button id="cashPaidBtn" style="width: 100%; padding: 12px; background: #38bdf8; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
                         <i class="fas fa-check"></i> Paid
                     </button>
                 </div>
@@ -1027,8 +1038,8 @@ async function filterData() {
             const entryDateObj = item.entryDateObj;
 
             const formatOptions = { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true };
-            let entryDate = entryDateObj ? entryDateObj.toLocaleString('en-US', formatOptions) : 'N/A';
-            let exitD = reportDate.toLocaleString('en-US', formatOptions);
+            let entryDate = entryDateObj ? fmtDate(entryDateObj) : 'N/A';
+            let exitD = fmtDate(reportDate);
             
             let locationName = 'N/A';
             if (data.locationId === 'rathinam_main_gate') locationName = 'Rathinam Main Gate';
@@ -1037,7 +1048,7 @@ async function filterData() {
 
             // Get payment method from map
             const paymentMethod = paymentMethodMap[data.slotId] || 'N/A';
-            const methodColor = paymentMethod === 'online' ? '#2563eb' : paymentMethod === 'cash' ? '#10b981' : '#6b7280';
+            const methodColor = paymentMethod === 'online' ? '#2563eb' : paymentMethod === 'cash' ? '#38bdf8' : '#6b7280';
             const methodText = paymentMethod === 'online' ? 'Online' : paymentMethod === 'cash' ? 'Cash' : 'N/A';
 
             let row = `
@@ -1050,7 +1061,7 @@ async function filterData() {
                 <td style="padding: 12px;">${entryDate}</td>
                 <td style="padding: 12px;">${exitD}</td>
                 <td style="padding: 12px;">${data.slotNumber || 'N/A'}</td>
-                <td style="padding: 12px; color: #10b981; font-weight: bold;">₹${data.price || 0}</td>
+                <td style="padding: 12px; color: #38bdf8; font-weight: bold;">₹${data.price || 0}</td>
                 <td style="padding: 12px; color: ${methodColor}; font-weight: bold;">${methodText}</td>
             </tr>
             `;
