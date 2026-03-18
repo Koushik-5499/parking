@@ -15,7 +15,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
             min-height: 100vh;
             padding: 20px;
             display: flex;
@@ -26,8 +26,7 @@
         .booking-container {
             max-width: 500px;
             width: 100%;
-            background: white;
-            border-radius: 12px;
+            background: #ffffff; border-radius: 12px;
             padding: 40px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
         }
@@ -38,7 +37,7 @@
         }
 
         .header h1 {
-            color: #2563eb;
+            color: #7c3aed;
             font-size: 28px;
             margin-bottom: 10px;
         }
@@ -49,7 +48,7 @@
         }
 
         .slot-info {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
             color: white;
             padding: 20px;
             border-radius: 8px;
@@ -73,7 +72,7 @@
 
         .input-group label {
             display: block;
-            color: #374151;
+            color: #1e1b4b;
             font-weight: 600;
             margin-bottom: 8px;
             font-size: 14px;
@@ -90,7 +89,7 @@
 
         .input-group input:focus {
             outline: none;
-            border-color: #2563eb;
+            border-color: #7c3aed;
             box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
@@ -117,13 +116,13 @@
         }
 
         .vehicle-type-selection input[type="radio"]:checked+label {
-            border-color: #2563eb;
+            border-color: #7c3aed;
             background: #eff6ff;
-            color: #2563eb;
+            color: #7c3aed;
         }
 
         .price-display {
-            background: #f9fafb;
+            background: #f3f4f6;
             padding: 20px;
             border-radius: 8px;
             margin-bottom: 25px;
@@ -137,7 +136,7 @@
         }
 
         .price-value {
-            color: #10b981;
+            color: #06b6d4;
             font-size: 36px;
             font-weight: 700;
         }
@@ -159,12 +158,12 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
             color: white;
         }
 
         .btn-secondary {
-            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
             color: white;
         }
 
@@ -207,7 +206,7 @@
             <div class="input-group" style="margin-bottom: 20px;">
                 <label>Vehicle Number</label>
                 <input type="text" id="bookingVehicleNumber" placeholder="e.g., TN01AB1234" required>
-                <small style="display: block; color: #10b981; font-weight: bold; margin-top: 8px;">* Per Hour: ₹80</small>
+                <small style="display: block; color: #06b6d4; font-weight: bold; margin-top: 8px;">* Per Hour: ₹80</small>
             </div>
 
             <div class="price-display">

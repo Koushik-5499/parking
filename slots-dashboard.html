@@ -15,7 +15,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
             min-height: 100vh;
             padding: 20px;
         }
@@ -33,16 +33,16 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
         }
 
         .header h1 {
-            color: #2563eb;
+            color: #7c3aed;
             font-size: 20px;
         }
 
         .back-btn {
-            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
             color: white;
             border: none;
             padding: 10px 20px;
@@ -60,7 +60,7 @@
             justify-content: center;
             gap: 30px;
             flex-wrap: wrap;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
         }
 
         .legend-item {
@@ -76,7 +76,7 @@
         }
 
         .legend-box.available {
-            background: #10b981;
+            background: #38bdf8;
         }
 
         .legend-box.pending {
@@ -89,14 +89,14 @@
 
         .legend-label {
             font-weight: 600;
-            color: #374151;
+            color: #1e1b4b;
         }
 
         .slots-container {
             background: white;
             padding: 30px;
             border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
         }
 
         .slots-grid {
@@ -116,7 +116,7 @@
 
         .slot-card.available {
             background: #d1fae5;
-            border-color: #10b981;
+            border-color: #06b6d4;
         }
 
         .slot-card.pending {
@@ -138,7 +138,7 @@
         .slot-number {
             font-size: 24px;
             font-weight: 700;
-            color: #374151;
+            color: #1e1b4b;
             margin-bottom: 8px;
         }
 
@@ -177,7 +177,7 @@
 
         .modal-title {
             font-size: 24px;
-            color: #2563eb;
+            color: #7c3aed;
             margin-bottom: 20px;
             text-align: center;
         }
@@ -188,7 +188,7 @@
 
         .input-group label {
             display: block;
-            color: #374151;
+            color: #1e1b4b;
             font-weight: 600;
             margin-bottom: 5px;
         }
@@ -205,7 +205,7 @@
         .btn-primary {
             width: 100%;
             padding: 12px;
-            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
             color: white;
             border: none;
             border-radius: 8px;
@@ -283,7 +283,7 @@
                 <div class="input-group" style="margin-bottom: 20px;">
                     <label>Vehicle Number</label>
                     <input type="text" id="bookingVehicleNumber" required>
-                    <small style="display: block; color: #10b981; font-weight: bold; margin-top: 8px;">* Per Hour: ₹80</small>
+                    <small style="display: block; color: #06b6d4; font-weight: bold; margin-top: 8px;">* Per Hour: ₹80</small>
                 </div>
                 <button type="submit" class="btn-primary">
                     <i class="fas fa-check"></i> Book Slot

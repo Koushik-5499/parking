@@ -310,14 +310,14 @@ function formatTime(date) {
 // Open Booking Modal - Redirect to booking page
 function openBookingModal(slot) {
     console.log('📝 Redirecting to booking page for slot:', slot.slotNumber);
-    
+
     // Store slot data in localStorage
     localStorage.setItem('bookingSlot', JSON.stringify({
         id: slot.id,
         slotNumber: slot.slotNumber,
         location: slot.location || selectedLocation
     }));
-    
+
     // Redirect to booking page
     window.location.href = 'booking.html';
 }
@@ -372,7 +372,7 @@ async function handleBookingSubmit() {
 
         // Generate QR code data
         const qrData = `${bookingRef.id}_${currentBookingSlot.slotNumber}_${location}_${vehicleNumber}`;
-        
+
         // Update parking_slots collection
         const slotRef = doc(db, 'parking_slots', currentBookingSlot.id);
         await updateDoc(slotRef, {
@@ -408,18 +408,18 @@ function createSlotCard(slot) {
 
     const card = document.createElement('div');
     let status = (slot.status || 'unknown').toLowerCase();
-    
+
     // Check if this slot has payment pending for current user
-    const isPaymentPending = status === 'payment_pending' && 
-                             currentUser && 
-                             (slot.userEmail === currentUser.email || slot.bookedBy === currentUser.email);
+    const isPaymentPending = status === 'payment_pending' &&
+        currentUser &&
+        (slot.userEmail === currentUser.email || slot.bookedBy === currentUser.email);
 
     // Create wrapper for card + timing
     const wrapper = document.createElement('div');
     wrapper.style.cssText = 'display: flex; flex-direction: column; align-items: center;';
 
     const slotBox = document.createElement('div');
-    
+
     // If payment pending, show as occupied (red) for display
     const displayStatus = status === 'payment_pending' ? 'occupied' : status;
     slotBox.className = `slot-card ${displayStatus}`;
@@ -456,7 +456,7 @@ function createSlotCard(slot) {
                 </div>
             `;
         }
-        
+
         // Show Pay button if payment pending for this user
         if (isPaymentPending) {
             cardHTML += `
@@ -622,7 +622,7 @@ function showToast(message, type = 'success') {
     `;
 
     if (type === 'success') {
-        toast.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+        toast.style.background = 'linear-gradient(135deg, #38bdf8 0%, #059669 100%)';
         toast.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
     } else {
         toast.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
@@ -677,31 +677,31 @@ document.head.appendChild(style);
 // Load Payment Requests for current user
 function loadPaymentRequests() {
     if (!currentUser) return;
-    
+
     const paymentRequestsSection = document.getElementById('paymentRequestsSection');
     const paymentRequestsContainer = document.getElementById('paymentRequestsContainer');
-    
+
     if (!paymentRequestsSection || !paymentRequestsContainer) return;
-    
+
     const paymentRequestsRef = collection(db, 'payment_requests');
-    const userQuery = query(paymentRequestsRef, 
+    const userQuery = query(paymentRequestsRef,
         where('userEmail', '==', currentUser.email),
         where('status', '==', 'pending')
     );
-    
+
     onSnapshot(userQuery, (snapshot) => {
         if (snapshot.empty) {
             paymentRequestsSection.style.display = 'none';
             return;
         }
-        
+
         paymentRequestsSection.style.display = 'block';
         paymentRequestsContainer.innerHTML = '';
-        
+
         snapshot.forEach((docSnap) => {
             const request = docSnap.data();
             const requestId = docSnap.id;
-            
+
             const requestCard = document.createElement('div');
             requestCard.style.cssText = `
                 background: #fef3c7;
@@ -714,10 +714,10 @@ function loadPaymentRequests() {
                 flex-wrap: wrap;
                 gap: 15px;
             `;
-            
+
             const entryTime = request.entryTime?.toDate ? request.entryTime.toDate().toLocaleString() : 'N/A';
             const exitTime = request.exitTime?.toDate ? request.exitTime.toDate().toLocaleString() : 'N/A';
-            
+
             requestCard.innerHTML = `
                 <div style="flex: 1; min-width: 200px;">
                     <h4 style="margin: 0 0 10px 0; color: #92400e; font-size: 18px;">
@@ -739,32 +739,32 @@ function loadPaymentRequests() {
                 <div style="text-align: center;">
                     <p style="margin: 0 0 10px 0; color: #92400e; font-size: 16px; font-weight: 600;">Amount to Pay</p>
                     <p style="margin: 0 0 15px 0; color: #ef4444; font-size: 28px; font-weight: 700;">₹${request.amount || 0}</p>
-                    <button onclick="payNow('${requestId}', ${request.amount})" style="background: #10b981; color: white; border: none; padding: 12px 30px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
+                    <button onclick="payNow('${requestId}', ${request.amount})" style="background: #38bdf8; color: white; border: none; padding: 12px 30px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
                         <i class="fas fa-credit-card"></i> Pay Now
                     </button>
                 </div>
             `;
-            
+
             paymentRequestsContainer.appendChild(requestCard);
         });
     });
 }
 
 // Pay Now function for payment requests
-window.payNow = async function(requestId, amount) {
+window.payNow = async function (requestId, amount) {
     if (!confirm(`Proceed to pay ₹${amount}?`)) return;
-    
+
     try {
         const requestRef = doc(db, 'payment_requests', requestId);
         const requestSnap = await getDoc(requestRef);
-        
+
         if (!requestSnap.exists()) {
             alert('Payment request not found!');
             return;
         }
-        
+
         const requestData = requestSnap.data();
-        
+
         // Save payment transaction
         await addDoc(collection(db, 'payment_transactions'), {
             locationId: requestData.locationId,
@@ -779,13 +779,13 @@ window.payNow = async function(requestId, amount) {
             paymentTime: serverTimestamp(),
             exitTime: requestData.exitTime
         });
-        
+
         // Update request status to completed
         await updateDoc(requestRef, {
             status: 'completed',
             paidTime: serverTimestamp()
         });
-        
+
         alert('Payment successful! Thank you.');
     } catch (error) {
         console.error('Payment error:', error);
@@ -794,48 +794,48 @@ window.payNow = async function(requestId, amount) {
 };
 
 // Pay for slot directly (when payment_pending)
-window.payForSlot = async function(slotId) {
+window.payForSlot = async function (slotId) {
     try {
         // Find the payment request for this slot
         const paymentRequestsRef = collection(db, 'payment_requests');
-        const q = query(paymentRequestsRef, 
+        const q = query(paymentRequestsRef,
             where('slotId', '==', slotId),
             where('userEmail', '==', currentUser.email),
             where('status', '==', 'pending')
         );
-        
+
         const querySnapshot = await getDocs(q);
-        
+
         if (querySnapshot.empty) {
             alert('Payment request not found!');
             return;
         }
-        
+
         const requestDoc = querySnapshot.docs[0];
         const requestData = requestDoc.data();
         const amount = requestData.amount;
-        
+
         // UPI Payment Details
-        const upiID = "koushik4680@oksbi";
+        const upiID = "koushik4680@oksbi"; // ⚠️ IMPORTANT: Verify this UPI ID is active and can receive payments
         const payeeName = "Smart Metro Parking";
         const transactionNote = `Parking-Slot${requestData.slotNumber}-${requestData.locationId}`;
-        
-        // Create UPI payment URL
+
+        // Create UPI payment URL (Standard UPI deep link format)
         const upiURL = `upi://pay?pa=${upiID}&pn=${encodeURIComponent(payeeName)}&am=${amount}&cu=INR&tn=${encodeURIComponent(transactionNote)}`;
-        
+
         // Show confirmation dialog
         if (!confirm(`You will be redirected to your UPI app to pay ₹${amount}.\n\nAfter completing payment, please return here and click "Payment Done" to confirm.`)) {
             return;
         }
-        
+
         // Open UPI payment app
         window.location.href = upiURL;
-        
+
         // Show payment confirmation dialog after a delay (user will return after payment)
         setTimeout(() => {
             showPaymentConfirmation(requestDoc.id, requestData);
         }, 3000);
-        
+
     } catch (error) {
         console.error('Payment error:', error);
         alert('Payment failed: ' + error.message);
@@ -857,7 +857,7 @@ function showPaymentConfirmation(requestId, requestData) {
         align-items: center;
         z-index: 10000;
     `;
-    
+
     modal.innerHTML = `
         <div style="background: white; padding: 30px; border-radius: 12px; max-width: 400px; width: 90%; text-align: center;">
             <div style="margin-bottom: 20px;">
@@ -866,7 +866,7 @@ function showPaymentConfirmation(requestId, requestData) {
             <h2 style="color: #374151; margin-bottom: 15px;">Payment Status</h2>
             <p style="color: #6b7280; margin-bottom: 20px;">Have you completed the payment of ₹${requestData.amount}?</p>
             <div style="display: flex; gap: 10px;">
-                <button id="paymentDoneBtn" style="flex: 1; padding: 14px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px;">
+                <button id="paymentDoneBtn" style="flex: 1; padding: 14px; background: #38bdf8; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px;">
                     <i class="fas fa-check"></i> Payment Done
                 </button>
                 <button id="paymentCancelBtn" style="flex: 1; padding: 14px; background: #6b7280; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px;">
@@ -875,9 +875,9 @@ function showPaymentConfirmation(requestId, requestData) {
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
+
     // Handle Payment Done button
     document.getElementById('paymentDoneBtn').addEventListener('click', async () => {
         try {
@@ -895,13 +895,13 @@ function showPaymentConfirmation(requestId, requestData) {
                 paymentTime: serverTimestamp(),
                 exitTime: requestData.exitTime
             });
-            
+
             // Update request status to completed
             await updateDoc(doc(db, 'payment_requests', requestId), {
                 status: 'completed',
                 paidTime: serverTimestamp()
             });
-            
+
             modal.remove();
             alert('✅ Payment confirmed! Thank you.');
         } catch (error) {
@@ -909,7 +909,7 @@ function showPaymentConfirmation(requestId, requestData) {
             alert('Failed to confirm payment: ' + error.message);
         }
     });
-    
+
     // Handle Cancel button
     document.getElementById('paymentCancelBtn').addEventListener('click', () => {
         modal.remove();

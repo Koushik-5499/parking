@@ -374,7 +374,7 @@ function generateQR(bookingId, slotNumber, location, name, vehicleNumber) {
 
     modal.innerHTML = `
         <div style="background: white; padding: 40px; border-radius: 12px; text-align: center; max-width: 450px;">
-            <h2 style="color: #10b981; margin-bottom: 15px;">
+            <h2 style="color: #38bdf8; margin-bottom: 15px;">
                 <i class="fas fa-check-circle"></i> Booking Confirmed!
             </h2>
             <p style="color: #6b7280; margin-bottom: 20px;">Show this QR code at the parking entrance</p>
@@ -570,11 +570,11 @@ window.payForSlot = async function(slotId) {
         const amount = requestData.amount;
         
         // UPI Payment Details
-        const upiID = "koushik4680@oksbi";
+        const upiID = "7200746814@pthdfc"; // ⚠️ IMPORTANT: Verify this UPI ID is active and can receive payments
         const payeeName = "Smart Metro Parking";
         const transactionNote = `Parking-Slot${requestData.slotNumber}-${requestData.locationId}`;
         
-        // Create UPI payment URL
+        // Create UPI payment URL (Standard UPI deep link format)
         const upiURL = `upi://pay?pa=${upiID}&pn=${encodeURIComponent(payeeName)}&am=${amount}&cu=INR&tn=${encodeURIComponent(transactionNote)}`;
         
         // Show confirmation dialog
@@ -620,7 +620,7 @@ function showPaymentConfirmation(requestId, requestData) {
             <h2 style="color: #374151; margin-bottom: 15px;">Payment Status</h2>
             <p style="color: #6b7280; margin-bottom: 20px;">Have you completed the payment of ₹${requestData.amount}?</p>
             <div style="display: flex; gap: 10px;">
-                <button id="paymentDoneBtn" style="flex: 1; padding: 14px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px;">
+                <button id="paymentDoneBtn" style="flex: 1; padding: 14px; background: #38bdf8; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px;">
                     <i class="fas fa-check"></i> Payment Done
                 </button>
                 <button id="paymentCancelBtn" style="flex: 1; padding: 14px; background: #6b7280; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px;">

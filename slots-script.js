@@ -302,7 +302,7 @@ function generateQRCode(bookingId, slotNumber, location, name, vehicleNumber) {
 
     modal.innerHTML = `
         <div class="modal-content">
-            <h2 style="color: #10b981; margin-bottom: 15px; text-align: center;">
+            <h2 style="color: #38bdf8; margin-bottom: 15px; text-align: center;">
                 <i class="fas fa-check-circle"></i> Booking Confirmed!
             </h2>
             <p style="color: #6b7280; margin-bottom: 20px; text-align: center;">

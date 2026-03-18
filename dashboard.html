@@ -15,7 +15,7 @@
 
         .dashboard-wrapper {
             min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
             padding: 20px;
         }
 
@@ -32,14 +32,14 @@
 
         .logo-section h2 {
             margin: 0;
-            color: #2563eb;
+            color: #7c3aed;
             font-size: 22px;
             font-weight: 700;
         }
 
         .logo-section p {
             margin: 0;
-            color: #10b981;
+            color: #06b6d4;
             font-size: 12px;
             font-weight: 500;
         }
@@ -51,18 +51,18 @@
         }
 
         .user-email-display {
-            color: #374151;
+            color: #1e1b4b;
             font-size: 14px;
             font-weight: 500;
         }
 
         .user-email-display i {
-            color: #2563eb;
+            color: #7c3aed;
             margin-right: 5px;
         }
 
         .logout-btn-top {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
             color: white;
             border: none;
             padding: 8px 20px;
@@ -85,10 +85,9 @@
         }
 
         .main-card {
-            background: white;
-            border-radius: 12px;
+            background: #ffffff; border-radius: 12px;
             padding: 30px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 20px 60px rgba(102, 126, 234, 0.35);
         }
 
         .stats-container {
@@ -105,19 +104,19 @@
             border-radius: 12px;
             text-align: center;
             color: white;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
         }
 
         .stat-card.total {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
         }
 
         .stat-card.available {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
         }
 
         .stat-card.occupied {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
         }
 
         .stat-label {
@@ -133,7 +132,7 @@
         }
 
         .section-title {
-            color: #374151;
+            color: #1e1b4b;
             font-size: 20px;
             font-weight: 600;
             margin-bottom: 20px;
@@ -146,7 +145,7 @@
             gap: 30px;
             margin-bottom: 20px;
             padding: 15px;
-            background: #f9fafb;
+            background: #f3f4f6;
             border-radius: 8px;
         }
 
@@ -155,7 +154,7 @@
             align-items: center;
             gap: 8px;
             font-size: 14px;
-            color: #374151;
+            color: #1e1b4b;
         }
 
         .legend-box {
@@ -165,7 +164,7 @@
         }
 
         .legend-box.available {
-            background: #10b981;
+            background: #38bdf8;
         }
 
         .legend-box.occupied {
@@ -243,7 +242,7 @@
                 <p id="locationName">Real-Time Parking Monitoring System</p>
             </div>
             <div class="user-section">
-                <button onclick="window.location.href='location.html'" style="background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; xewcursor: pointer; margin-right: 10px;">
+                <button onclick="window.location.href='location.html'" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; xewcursor: pointer; margin-right: 10px;">
                     <i class="fas fa-arrow-left"></i> Change Location
                 </button>
                 <span class="user-email-display">
@@ -300,7 +299,7 @@
                 
                 <!-- Payment Requests Section -->
                 <div id="paymentRequestsSection" style="margin-top: 30px; display: none;">
-                    <h3 style="color: #374151; margin-bottom: 15px; font-size: 20px; font-weight: 700;">
+                    <h3 style="color: #1e1b4b; margin-bottom: 15px; font-size: 20px; font-weight: 700;">
                         <i class="fas fa-credit-card"></i> Pending Payments
                     </h3>
                     <div id="paymentRequestsContainer" style="display: grid; gap: 15px;">
