@@ -775,6 +775,7 @@ window.payNow = async function (requestId, amount) {
             phone: requestData.phone || 'N/A',
             vehicleNumber: requestData.vehicleNumber || 'N/A',
             amount: amount,
+            bookingId: requestData.bookingId || '',
             paymentMethod: 'online',
             paymentTime: serverTimestamp(),
             exitTime: requestData.exitTime
@@ -891,6 +892,7 @@ function showPaymentConfirmation(requestId, requestData) {
                 phone: requestData.phone || 'N/A',
                 vehicleNumber: requestData.vehicleNumber || 'N/A',
                 amount: requestData.amount,
+                bookingId: requestData.bookingId || '',
                 paymentMethod: 'online',
                 paymentTime: serverTimestamp(),
                 exitTime: requestData.exitTime

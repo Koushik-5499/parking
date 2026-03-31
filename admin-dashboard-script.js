@@ -64,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         loadAllStats();
         loadSlots(currentLocation);
+        loadEarnings();
         
         document.getElementById('toggleScannerBtn')?.addEventListener('click', window.toggleScanner);
         document.getElementById('manualCodeSubmit')?.addEventListener('click', async () => {
@@ -78,6 +79,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.getElementById('showReportBtn')?.addEventListener('click', filterData);
         document.getElementById('exportExcelBtn')?.addEventListener('click', exportExcel);
+        document.getElementById('bookingSearchBtn')?.addEventListener('click', searchBookings);
+        document.getElementById('bookingSearchInput')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') searchBookings();
+        });
     });
 
     document.getElementById('logoutBtn').addEventListener('click', async () => {
@@ -85,6 +90,233 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = 'index.html';
     });
 });
+
+// Load earnings data from payment_transactions
+function loadEarnings() {
+    const paymentsRef = collection(db, 'payment_transactions');
+    
+    onSnapshot(paymentsRef, (snapshot) => {
+        const now = new Date();
+        
+        // Today: start of today
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        
+        // This week: start of Monday
+        const dayOfWeek = now.getDay();
+        const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - mondayOffset);
+        
+        // This month: start of month
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        
+        let dailyTotal = 0;
+        let weeklyTotal = 0;
+        let monthlyTotal = 0;
+        
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            const amount = data.amount || 0;
+            
+            let paymentDate = null;
+            if (data.paymentTime?.toDate) {
+                paymentDate = data.paymentTime.toDate();
+            } else if (data.exitTime?.toDate) {
+                paymentDate = data.exitTime.toDate();
+            }
+            
+            if (!paymentDate) return;
+            
+            if (paymentDate >= monthStart) {
+                monthlyTotal += amount;
+            }
+            if (paymentDate >= weekStart) {
+                weeklyTotal += amount;
+            }
+            if (paymentDate >= todayStart) {
+                dailyTotal += amount;
+            }
+        });
+        
+        const dailyEl = document.getElementById('dailyEarnings');
+        const weeklyEl = document.getElementById('weeklyEarnings');
+        const monthlyEl = document.getElementById('monthlyEarnings');
+        
+        if (dailyEl) dailyEl.textContent = `₹${dailyTotal}`;
+        if (weeklyEl) weeklyEl.textContent = `₹${weeklyTotal}`;
+        if (monthlyEl) monthlyEl.textContent = `₹${monthlyTotal}`;
+    });
+}
+
+// Search bookings by ID, phone, or email
+async function searchBookings() {
+    const searchInput = document.getElementById('bookingSearchInput');
+    const searchType = document.getElementById('bookingSearchType');
+    const resultsDiv = document.getElementById('bookingSearchResults');
+    const searchBtn = document.getElementById('bookingSearchBtn');
+    
+    const searchVal = searchInput.value.trim();
+    if (!searchVal) {
+        alert('Please enter a search value.');
+        return;
+    }
+    
+    searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...';
+    searchBtn.disabled = true;
+    
+    try {
+        const type = searchType.value;
+        let results = [];
+        
+        // Search in payment_transactions
+        const ptRef = collection(db, 'payment_transactions');
+        const ptSnapshot = await getDocs(ptRef);
+        
+        ptSnapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            data._docId = docSnap.id;
+            data._source = 'payment';
+            let match = false;
+            
+            if (type === 'bookingId') {
+                match = (data.bookingId && data.bookingId.includes(searchVal)) ||
+                        (data.qrCode && data.qrCode.includes(searchVal));
+            } else if (type === 'phone') {
+                match = data.phone && data.phone.includes(searchVal);
+            } else if (type === 'email') {
+                match = data.userEmail && data.userEmail.toLowerCase().includes(searchVal.toLowerCase());
+            }
+            
+            if (match) results.push(data);
+        });
+        
+        // Also search in bookings collection
+        const bRef = collection(db, 'bookings');
+        const bSnapshot = await getDocs(bRef);
+        
+        bSnapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            data._docId = docSnap.id;
+            data._source = 'booking';
+            let match = false;
+            
+            if (type === 'bookingId') {
+                match = docSnap.id.includes(searchVal) ||
+                        (data.bookingId && data.bookingId.includes(searchVal));
+            } else if (type === 'phone') {
+                match = data.phone && data.phone.includes(searchVal);
+            } else if (type === 'email') {
+                match = data.userEmail && data.userEmail.toLowerCase().includes(searchVal.toLowerCase());
+            }
+            
+            if (match) results.push(data);
+        });
+        
+        // Render results
+        if (results.length === 0) {
+            resultsDiv.innerHTML = `
+                <div style="text-align: center; padding: 40px 20px; color: #f87171;">
+                    <i class="fas fa-exclamation-circle" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i>
+                    <p style="font-size: 16px;">No results found for "${searchVal}"</p>
+                </div>
+            `;
+        } else {
+            let html = `<p style="color: #a5b4fc; margin-bottom: 15px; font-weight: 600;"><i class="fas fa-check-circle"></i> Found ${results.length} result(s)</p>`;
+            
+            results.forEach(r => {
+                const gatesMap = {
+                    'rathinam_main_gate': 'Rathinam Main Gate',
+                    'rathinam_gate1': 'Rathinam Gate 1',
+                    'rathinam_gate3': 'Rathinam Gate 3'
+                };
+                const gate = r.locationId ? (gatesMap[r.locationId] || r.locationId) : 'N/A';
+                const bId = r.bookingId || r.qrCode || r._docId || 'N/A';
+                
+                let entryStr = 'N/A';
+                if (r.entryTime?.toDate) entryStr = fmtDate(r.entryTime.toDate());
+                else if (r.bookedAt?.toDate) entryStr = fmtDate(r.bookedAt.toDate());
+                
+                let exitStr = 'N/A';
+                if (r.exitTime?.toDate) exitStr = fmtDate(r.exitTime.toDate());
+                
+                let paymentStr = 'N/A';
+                if (r.paymentTime?.toDate) paymentStr = fmtDate(r.paymentTime.toDate());
+                
+                const amount = r.amount || r.price || 0;
+                const status = r.status || (r._source === 'payment' ? 'Completed' : 'Active');
+                const statusColor = status === 'Completed' || status === 'completed' ? '#38ef7d' : 
+                                   status === 'reserved' ? '#fbbf24' : '#60a5fa';
+                
+                html += `
+                <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 20px; margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <span style="color: #a5b4fc; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Booking ID</span>
+                            <p style="color: white; font-size: 16px; font-weight: 700; margin: 4px 0 0; font-family: 'Courier New', monospace;">${bId}</p>
+                        </div>
+                        <span style="background: ${statusColor}22; color: ${statusColor}; padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; text-transform: uppercase;">${status}</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px;">
+                        <div>
+                            <span style="color: #9ca3af; font-size: 12px;">Customer</span>
+                            <p style="color: #e0e7ff; margin: 2px 0 0; font-weight: 600;">${r.bookedBy || r.name || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <span style="color: #9ca3af; font-size: 12px;">Email</span>
+                            <p style="color: #e0e7ff; margin: 2px 0 0; font-weight: 600;">${r.userEmail || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <span style="color: #9ca3af; font-size: 12px;">Phone</span>
+                            <p style="color: #e0e7ff; margin: 2px 0 0; font-weight: 600;">${r.phone || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <span style="color: #9ca3af; font-size: 12px;">Vehicle</span>
+                            <p style="color: #e0e7ff; margin: 2px 0 0; font-weight: 600;">${r.vehicleNumber || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <span style="color: #9ca3af; font-size: 12px;">Gate & Slot</span>
+                            <p style="color: #e0e7ff; margin: 2px 0 0; font-weight: 600;">${gate}, Slot ${r.slotNumber || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <span style="color: #9ca3af; font-size: 12px;">Amount</span>
+                            <p style="color: #38bdf8; margin: 2px 0 0; font-weight: 700; font-size: 18px;">₹${amount}</p>
+                        </div>
+                        <div>
+                            <span style="color: #9ca3af; font-size: 12px;">Entry</span>
+                            <p style="color: #e0e7ff; margin: 2px 0 0; font-weight: 600;">${entryStr}</p>
+                        </div>
+                        <div>
+                            <span style="color: #9ca3af; font-size: 12px;">Exit</span>
+                            <p style="color: #e0e7ff; margin: 2px 0 0; font-weight: 600;">${exitStr}</p>
+                        </div>
+                        <div>
+                            <span style="color: #9ca3af; font-size: 12px;">Payment Method</span>
+                            <p style="color: #e0e7ff; margin: 2px 0 0; font-weight: 600;">${r.paymentMethod || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <span style="color: #9ca3af; font-size: 12px;">Payment Time</span>
+                            <p style="color: #e0e7ff; margin: 2px 0 0; font-weight: 600;">${paymentStr}</p>
+                        </div>
+                    </div>
+                </div>
+                `;
+            });
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+    } catch (error) {
+        console.error('Search error:', error);
+        resultsDiv.innerHTML = `
+            <div style="text-align: center; padding: 40px 20px; color: #f87171;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px;"></i>
+                <p>Search failed: ${error.message}</p>
+            </div>
+        `;
+    }
+    
+    searchBtn.innerHTML = '<i class="fas fa-search"></i> Search';
+    searchBtn.disabled = false;
+}
 
 function loadAllStats() {
     const locations = ['rathinam_main_gate', 'rathinam_gate1', 'rathinam_gate3'];
@@ -645,6 +877,7 @@ window.processExit = async function (locationId, slotId) {
                 vehicleNumber: slotData.vehicleNumber || 'N/A',
                 vehicleType: slotData.vehicleType || 'N/A',
                 bookingTime: slotData.bookingTime ? new Date(slotData.bookingTime) : null,
+                bookingId: slotData.bookingId || slotData.qrCode || '',
                 entryTime: entryDate,
                 exitTime: exitDate,
                 price: finalPrice
@@ -764,6 +997,7 @@ window.processExit = async function (locationId, slotId) {
                     phone: slotData.phone || 'N/A',
                     vehicleNumber: slotData.vehicleNumber || 'N/A',
                     amount: finalPrice,
+                    bookingId: slotData.bookingId || slotData.qrCode || '',
                     paymentMethod: 'online',
                     paymentTime: serverTimestamp(),
                     exitTime: exitDate
@@ -812,6 +1046,7 @@ window.processExit = async function (locationId, slotId) {
                     phone: slotData.phone || 'N/A',
                     vehicleNumber: slotData.vehicleNumber || 'N/A',
                     amount: finalPrice,
+                    bookingId: slotData.bookingId || slotData.qrCode || '',
                     status: 'pending',
                     requestTime: serverTimestamp(),
                     exitTime: exitDate,
@@ -910,6 +1145,7 @@ window.processExit = async function (locationId, slotId) {
                     amount: finalPrice,
                     cashGiven: cashGiven,
                     changeReturned: cashGiven - finalPrice,
+                    bookingId: slotData.bookingId || slotData.qrCode || '',
                     paymentMethod: 'cash',
                     paymentTime: serverTimestamp(),
                     exitTime: exitDate
@@ -984,12 +1220,15 @@ async function filterData() {
         const paymentsRef = collection(db, 'payment_transactions');
         const paymentsSnapshot = await getDocs(paymentsRef);
         
-        // Create a map of slotId -> paymentMethod
+        // Create a map of slotId -> { paymentMethod, bookingId }
         const paymentMethodMap = {};
         paymentsSnapshot.forEach(doc => {
             const payment = doc.data();
             if (payment.slotId) {
-                paymentMethodMap[payment.slotId] = payment.paymentMethod || 'N/A';
+                paymentMethodMap[payment.slotId] = {
+                    method: payment.paymentMethod || 'N/A',
+                    bookingId: payment.bookingId || payment.qrCode || ''
+                };
             }
         });
         
@@ -1046,13 +1285,18 @@ async function filterData() {
             else if (data.locationId === 'rathinam_gate1') locationName = 'Gate 1';
             else if (data.locationId === 'rathinam_gate3') locationName = 'Gate 3';
 
-            // Get payment method from map
-            const paymentMethod = paymentMethodMap[data.slotId] || 'N/A';
+            // Get payment info from map
+            const paymentInfo = paymentMethodMap[data.slotId] || {};
+            const paymentMethod = paymentInfo.method || 'N/A';
             const methodColor = paymentMethod === 'online' ? '#2563eb' : paymentMethod === 'cash' ? '#38bdf8' : '#6b7280';
             const methodText = paymentMethod === 'online' ? 'Online' : paymentMethod === 'cash' ? 'Cash' : 'N/A';
 
+            // Get bookingId from report data first, then fallback to payment map
+            const reportBookingId = data.bookingId || data.qrCode || paymentInfo.bookingId || 'N/A';
+
             let row = `
             <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 12px; font-family: 'Courier New', monospace; font-size: 12px;">${reportBookingId}</td>
                 <td style="padding: 12px;">${locationName}</td>
                 <td style="padding: 12px;">${data.bookedBy || 'N/A'}</td>
                 <td style="padding: 12px;">${data.userEmail || 'N/A'}</td>
@@ -1153,5 +1397,30 @@ window.resetPaymentPendingSlot = async function(locationId, slotId) {
     } catch (error) {
         console.error('Error resetting slot:', error);
         alert('Failed to reset slot: ' + error.message);
+    }
+};
+
+// Global function to switch tabs in Admin Dashboard
+window.switchAdminTab = function(tabId) {
+    // Hide all dashboard sections
+    document.querySelectorAll('.dashboard-section').forEach(section => {
+        section.classList.remove('active');
+    });
+
+    // Remove active class from all bottom nav items
+    document.querySelectorAll('.bottom-nav .nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
+
+    // Show the targeted section
+    const targetSection = document.getElementById(`tab-${tabId}`);
+    if (targetSection) {
+        targetSection.classList.add('active');
+    }
+
+    // Highlight the targeted nav item
+    const targetNav = document.getElementById(`nav-${tabId}`);
+    if (targetNav) {
+        targetNav.classList.add('active');
     }
 };

@@ -645,6 +645,7 @@ function showPaymentConfirmation(requestId, requestData) {
                 phone: requestData.phone || 'N/A',
                 vehicleNumber: requestData.vehicleNumber || 'N/A',
                 amount: requestData.amount,
+                bookingId: requestData.bookingId || '',
                 paymentMethod: 'online',
                 paymentTime: serverTimestamp(),
                 exitTime: requestData.exitTime

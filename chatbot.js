@@ -76,9 +76,9 @@ function getBotResponse(userMessage) {
             const gate1 = parkingData.rathinam_gate1;
             const gate3 = parkingData.rathinam_gate3;
             return `Available parking slots:\n\n` +
-                `📍 Main Gate: ${mainGate.available}/${mainGate.total} available\n` +
-                `📍 Gate 1: ${gate1.available}/${gate1.total} available\n` +
-                `📍 Gate 3: ${gate3.available}/${gate3.total} available`;
+                `Rathinam Main Gate: ${mainGate.available}/${mainGate.total} available\n` +
+                `Rathinam Gate 1: ${gate1.available}/${gate1.total} available\n` +
+                `Rathinam Gate 3: ${gate3.available}/${gate3.total} available`;
         }
     }
 
@@ -221,7 +221,7 @@ function createChatbotUI() {
                 50% { transform: translateX(-5px); }
             }
         </style>
-        <div id="chatbot-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
+        <div id="chatbot-container" style="position: fixed; bottom: 90px; right: 20px; z-index: 9999;">
             <div id="chatbot-button" style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: all 0.3s ease;">
                 <i class="fas fa-comments" style="font-size: 28px;"></i>
             </div>
@@ -258,7 +258,7 @@ function createChatbotUI() {
                 <div style="padding: 15px; background: white; border-top: 1px solid #e5e7eb;">
                     <div style="display: flex; gap: 10px;">
                         <input type="text" id="chat-input" placeholder="Type or speak..." style="flex: 1; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; outline: none;">
-                        <button id="voice-btn" title="Speak">🎤</button>
+                        <button id="voice-btn" title="Speak">🎙️</button>
                         <button id="send-message" style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600;">
                             <i class="fas fa-paper-plane"></i>
                         </button>
@@ -425,7 +425,7 @@ function createChatbotUI() {
             window.isListeningWave = false;
             document.getElementById('siri-container').style.display = 'none';
             voiceBtn.classList.remove('listening');
-            voiceBtn.textContent = '🎤';
+            voiceBtn.textContent = '🎙️';
             // Auto-send the recognized speech
             callback();
         };
@@ -435,14 +435,14 @@ function createChatbotUI() {
             window.isListeningWave = false;
             document.getElementById('siri-container').style.display = 'none';
             voiceBtn.classList.remove('listening');
-            voiceBtn.textContent = '🎤';
+            voiceBtn.textContent = '🎙️';
         };
 
         recognition.onend = () => {
             window.isListeningWave = false;
             document.getElementById('siri-container').style.display = 'none';
             voiceBtn.classList.remove('listening');
-            voiceBtn.textContent = '🎤';
+            voiceBtn.textContent = '🎙️';
             // Resume wake word listener
             window._commandListening = false;
             setTimeout(() => startWakeWord(), 500);
@@ -571,7 +571,7 @@ function startCommandListening() {
 
         if (voiceBtn) {
             voiceBtn.classList.remove('listening');
-            voiceBtn.textContent = '🎤';
+            voiceBtn.textContent = '🎙️';
         }
         window._commandListening = false;
         // Resume wake word listening

@@ -67,6 +67,32 @@
         .result-title.success { color: #38ef7d; }
         .result-title.error   { color: #f953c6; }
         @media (max-width: 1024px) { .main-content { grid-template-columns: 1fr; } }
+        
+        /* Tab Navigation Styles */
+        .dashboard-section { display: none; margin-bottom: 20px; }
+        .dashboard-section.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-top: 1px solid rgba(102, 126, 234, 0.25);
+            display: flex; justify-content: space-around;
+            padding: 10px 0 18px 0;
+            box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.4);
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        .nav-item {
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+            color: rgba(255, 255, 255, 0.4); cursor: pointer; transition: all 0.3s ease; flex: 1;
+        }
+        .nav-item i { font-size: 20px; transition: all 0.3s ease; }
+        .nav-item span { font-size: 11px; font-weight: 700; letter-spacing: 0.3px; }
+        .nav-item.active { color: #a78bfa; }
+        .nav-item.active i { transform: translateY(-3px); filter: drop-shadow(0 0 6px rgba(167, 139, 250, 0.5)); }
+        .nav-item:hover { color: rgba(255, 255, 255, 0.7); }
+        body { padding-bottom: 85px; }
+        .main-content { display: block; }
     </style>
 </head>
 
@@ -79,8 +105,10 @@
             </button>
         </div>
 
-        <div class="stats-grid">
-            <div class="stat-card total">
+        <div id="tab-dashboard" class="dashboard-section active">
+            <h2 class="section-title" style="color: #667eea; margin-top: 10px; margin-bottom: 20px;"><i class="fas fa-chart-pie"></i> Overview Dashboard</h2>
+            <div class="stats-grid">
+                <div class="stat-card total">
                 <i class="fas fa-parking"></i>
                 <div class="stat-value" id="totalSlots">0</div>
                 <div class="stat-label">Total Slots</div>
@@ -100,9 +128,30 @@
                 <div class="stat-value" id="occupiedSlots">0</div>
                 <div class="stat-label">Occupied</div>
             </div>
+            </div>
+
+            <h2 class="section-title" style="color: #667eea; margin-top: 25px; margin-bottom: 20px;"><i class="fas fa-indian-rupee-sign"></i> Earnings Overview</h2>
+            <div class="stats-grid">
+                <div class="stat-card" style="background: linear-gradient(135deg, #38bdf8, #0ea5e9);">
+                    <i class="fas fa-calendar-day"></i>
+                    <div class="stat-value" id="dailyEarnings">₹0</div>
+                    <div class="stat-label">Today's Earnings</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #a78bfa, #7c3aed);">
+                    <i class="fas fa-calendar-week"></i>
+                    <div class="stat-value" id="weeklyEarnings">₹0</div>
+                    <div class="stat-label">This Week</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #34d399, #059669);">
+                    <i class="fas fa-calendar-alt"></i>
+                    <div class="stat-value" id="monthlyEarnings">₹0</div>
+                    <div class="stat-label">This Month</div>
+                </div>
+            </div>
         </div>
 
-        <div class="main-content">
+        <!-- ===== LIVE SLOTS TAB ===== -->
+        <div id="tab-liveslots" class="dashboard-section">
             <div class="section">
                 <h2 class="section-title">
                     <i class="fas fa-th"></i> Live Slot View
@@ -118,10 +167,13 @@
                     </p>
                 </div>
             </div>
+        </div>
 
+        <!-- ===== SCANNER TAB ===== -->
+        <div id="tab-scanner" class="dashboard-section">
             <div class="section">
                 <h2 class="section-title">
-                    <i class="fas fa-qrcode"></i> <strong>Scanner & Code Entry</strong>
+                    <i class="fas fa-qrcode"></i> <strong>Scanner &amp; Code Entry</strong>
                 </h2>
                 <button id="toggleScannerBtn"
                     style="background: #2563eb; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; width: 100%; justify-content: center; margin-bottom: 20px;">
@@ -144,21 +196,23 @@
                 </div>
                 <div id="scanResult" class="scan-result"></div>
             </div>
+        </div>
 
-            <!-- Export Reports Section -->
-            <div class="section" style="grid-column: 1 / -1;">
+        <!-- ===== REPORTS TAB ===== -->
+        <div id="tab-reports" class="dashboard-section">
+            <div class="section">
                 <h2 class="section-title">
                     <i class="fas fa-file-excel"></i> Export Reports
                 </h2>
                 <div
                     style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; flex-direction: row; justify-content: flex-start; align-items: flex-end;">
                     <div style="flex: 1; min-width: 200px;">
-                        <label style="display: block; margin-bottom: 5px; color: #e0e7ff; font-weight: 800;"><strong>From Date & Time</strong></label>
+                        <label style="display: block; margin-bottom: 5px; color: #e0e7ff; font-weight: 800;"><strong>From Date &amp; Time</strong></label>
                         <input type="datetime-local" id="reportFrom"
                             style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box;">
                     </div>
                     <div style="flex: 1; min-width: 200px;">
-                        <label style="display: block; margin-bottom: 5px; color: #e0e7ff; font-weight: 800;"><strong>To Date & Time</strong></label>
+                        <label style="display: block; margin-bottom: 5px; color: #e0e7ff; font-weight: 800;"><strong>To Date &amp; Time</strong></label>
                         <input type="datetime-local" id="reportTo"
                             style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box;">
                     </div>
@@ -179,6 +233,7 @@
                         style="width: 100%; border-collapse: collapse; margin-top: 20px; display: none;">
                         <thead>
                             <tr style="background-color: rgba(255, 255, 255, 0.1); color: #e0e7ff; text-align: left; font-weight: 800;">
+                                <th style="padding: 12px; border-bottom: 2px solid rgba(255, 255, 255, 0.2);"><strong>Booking ID</strong></th>
                                 <th style="padding: 12px; border-bottom: 2px solid rgba(255, 255, 255, 0.2);"><strong>Gate Name</strong></th>
                                 <th style="padding: 12px; border-bottom: 2px solid rgba(255, 255, 255, 0.2);"><strong>Customer Name</strong></th>
                                 <th style="padding: 12px; border-bottom: 2px solid rgba(255, 255, 255, 0.2);"><strong>Username</strong></th>
@@ -197,7 +252,69 @@
                 </div>
             </div>
         </div>
+
+        <!-- ===== BOOKINGS TAB ===== -->
+        <div id="tab-bookings" class="dashboard-section">
+            <div class="section">
+                <h2 class="section-title">
+                    <i class="fas fa-search"></i> Search Bookings
+                </h2>
+                <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 20px;">
+                    <div style="flex: 2; min-width: 200px;">
+                        <label style="display: block; margin-bottom: 6px; color: #e0e7ff; font-weight: 700; font-size: 13px;">Search Value</label>
+                        <input type="text" id="bookingSearchInput" placeholder="Enter Booking ID, Phone or Email..."
+                            style="width: 100%; padding: 12px 16px; border: 2px solid rgba(255,255,255,0.15); border-radius: 10px; box-sizing: border-box; font-size: 14px; background: rgba(255,255,255,0.08); color: white; outline: none;">
+                    </div>
+                    <div style="flex: 1; min-width: 150px;">
+                        <label style="display: block; margin-bottom: 6px; color: #e0e7ff; font-weight: 700; font-size: 13px;">Search By</label>
+                        <select id="bookingSearchType"
+                            style="width: 100%; padding: 12px 16px; border: 2px solid rgba(255,255,255,0.15); border-radius: 10px; box-sizing: border-box; font-size: 14px; background: rgba(255,255,255,0.08); color: white; outline: none; cursor: pointer;">
+                            <option value="bookingId" style="background: #1a1a2e;">Booking ID</option>
+                            <option value="phone" style="background: #1a1a2e;">Phone Number</option>
+                            <option value="email" style="background: #1a1a2e;">Email ID</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button id="bookingSearchBtn"
+                            style="padding: 12px 28px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 8px; height: 46px; box-shadow: 0 4px 15px rgba(102,126,234,0.4); transition: all 0.3s;">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                    </div>
+                </div>
+                <div id="bookingSearchResults">
+                    <div style="text-align: center; padding: 50px 20px; color: #9ca3af;">
+                        <i class="fas fa-search" style="font-size: 48px; margin-bottom: 15px; opacity: 0.3;"></i>
+                        <p style="font-size: 16px;">Search for bookings by ID, phone number, or email</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <div class="nav-item active" onclick="switchAdminTab('dashboard')" id="nav-dashboard">
+            <i class="fas fa-chart-pie"></i>
+            <span>Dashboard</span>
+        </div>
+        <div class="nav-item" onclick="switchAdminTab('liveslots')" id="nav-liveslots">
+            <i class="fas fa-th"></i>
+            <span>Live Slots</span>
+        </div>
+        <div class="nav-item" onclick="switchAdminTab('scanner')" id="nav-scanner">
+            <i class="fas fa-qrcode"></i>
+            <span>Scanner</span>
+        </div>
+        <div class="nav-item" onclick="switchAdminTab('reports')" id="nav-reports">
+            <i class="fas fa-file-excel"></i>
+            <span>Reports</span>
+        </div>
+        <div class="nav-item" onclick="switchAdminTab('bookings')" id="nav-bookings">
+            <i class="fas fa-book"></i>
+            <span>Bookings</span>
+        </div>
+    </nav>
 
     <!-- Slot Details Modal -->
     <div id="slotModal" class="modal"></div>
