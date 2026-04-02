@@ -1019,6 +1019,17 @@ window.processExit = async function (locationId, slotId) {
                 receiptModal.remove();
                 isScanning = false;
                 alert('Payment completed successfully!');
+
+                // Send receipt email to customer
+                sendAdminReceiptEmail({
+                    to: slotData.userEmail,
+                    bookingId: slotData.bookingId || slotData.qrCode || '',
+                    locationId: locationId,
+                    slotNumber: slotData.slotNumber || 'N/A',
+                    entryDate: entryDate,
+                    exitDate: exitDate,
+                    amount: finalPrice
+                });
             } catch (error) {
                 console.error('Error saving payment:', error);
                 alert('Failed to save payment: ' + error.message);
@@ -1167,6 +1178,17 @@ window.processExit = async function (locationId, slotId) {
                 receiptModal.remove();
                 isScanning = false;
                 alert('Payment completed successfully!');
+
+                // Send receipt email to customer
+                sendAdminReceiptEmail({
+                    to: slotData.userEmail,
+                    bookingId: slotData.bookingId || slotData.qrCode || '',
+                    locationId: locationId,
+                    slotNumber: slotData.slotNumber || 'N/A',
+                    entryDate: entryDate,
+                    exitDate: exitDate,
+                    amount: finalPrice
+                });
             } catch (error) {
                 console.error('Error saving payment:', error);
                 alert('Failed to save payment: ' + error.message);
@@ -1424,3 +1446,86 @@ window.switchAdminTab = function(tabId) {
         targetNav.classList.add('active');
     }
 };
+
+// ===== Send Receipt Email from Admin =====
+async function sendAdminReceiptEmail(data) {
+    // Skip if user is admin/VIP or no valid email
+    if (!data.to || data.to === 'Admin (VIP)' || data.to === 'Guest' || data.to === 'N/A') {
+        console.log('Skipping email: no valid customer email');
+        return;
+    }
+
+    try {
+        const gatesMap = {
+            'rathinam_main_gate': 'Rathinam Main Gate',
+            'rathinam_gate1': 'Rathinam Gate 1',
+            'rathinam_gate3': 'Rathinam Gate 3'
+        };
+        const locName = gatesMap[data.locationId] || data.locationId || 'N/A';
+
+        const fmtTimeStr = (d) => d ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'N/A';
+        const fmtDateStr = (d) => {
+            if (!d) return 'N/A';
+            const dd = String(d.getDate()).padStart(2, '0');
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const yy = String(d.getFullYear()).slice(-2);
+            return `${dd}/${mm}/${yy}`;
+        };
+
+        let durationMins = 'N/A';
+        if (data.entryDate && data.exitDate) {
+            durationMins = Math.max(1, Math.round((data.exitDate - data.entryDate) / 60000)) + ' min';
+        }
+
+        // Generate QR code as base64
+        let qrImageBase64 = null;
+        if (data.bookingId && typeof QRCode !== 'undefined') {
+            const tempDiv = document.createElement('div');
+            tempDiv.style.cssText = 'position: absolute; left: -9999px; top: -9999px;';
+            document.body.appendChild(tempDiv);
+
+            new QRCode(tempDiv, {
+                text: data.bookingId,
+                width: 200,
+                height: 200,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            const tempCanvas = tempDiv.querySelector('canvas');
+            if (tempCanvas) {
+                qrImageBase64 = tempCanvas.toDataURL('image/png');
+            }
+            document.body.removeChild(tempDiv);
+        }
+
+        const response = await fetch('/api/send-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                to: data.to,
+                bookingId: data.bookingId,
+                date: fmtDateStr(data.entryDate || data.exitDate),
+                location: `${locName}, Slot ${data.slotNumber}`,
+                entry: fmtTimeStr(data.entryDate),
+                exit: fmtTimeStr(data.exitDate),
+                duration: durationMins,
+                rate: '₹80/hr',
+                amount: data.amount || 0,
+                qrImage: qrImageBase64
+            })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            console.log('📧 Receipt email sent to', data.to);
+        } else {
+            console.error('Email failed:', result.error);
+        }
+    } catch (error) {
+        console.error('Admin email send error:', error);
+    }
+}

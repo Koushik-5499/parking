@@ -658,7 +658,47 @@ function showPaymentConfirmation(requestId, requestData) {
             });
             
             modal.remove();
-            alert('✅ Payment confirmed! Thank you.');
+            alert('✅ Payment confirmed! Thank you. Sending receipt to your email...');
+
+            // Send email receipt automatically after payment
+            const gatesMap = {
+                'rathinam_main_gate': 'Rathinam Main Gate',
+                'rathinam_gate1': 'Rathinam Gate 1',
+                'rathinam_gate3': 'Rathinam Gate 3'
+            };
+            const locName = gatesMap[requestData.locationId] || requestData.locationId || 'N/A';
+            
+            const entryTime = requestData.entryTime?.toDate ? requestData.entryTime.toDate() : null;
+            const exitTime = requestData.exitTime instanceof Date ? requestData.exitTime : 
+                            (requestData.exitTime?.toDate ? requestData.exitTime.toDate() : new Date());
+            
+            const fmtTime = (d) => d ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'N/A';
+            const fmtDateStr = (d) => {
+                if (!d) return 'N/A';
+                const dd = String(d.getDate()).padStart(2, '0');
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const yy = String(d.getFullYear()).slice(-2);
+                return `${dd}/${mm}/${yy}`;
+            };
+
+            let durationMins = 'N/A';
+            if (entryTime && exitTime) {
+                durationMins = Math.max(1, Math.round((exitTime - entryTime) / 60000)) + ' min';
+            }
+
+            sendReceiptEmail({
+                to: currentUser.email,
+                bookingId: requestData.bookingId || '',
+                date: fmtDateStr(entryTime || exitTime),
+                location: `${locName}, Slot ${requestData.slotNumber || 'N/A'}`,
+                entry: fmtTime(entryTime),
+                exit: fmtTime(exitTime),
+                duration: durationMins,
+                rate: '₹80/hr',
+                amount: requestData.amount || 0,
+                qrCode: requestData.bookingId || ''
+            });
+
         } catch (error) {
             console.error('Error confirming payment:', error);
             alert('Failed to confirm payment: ' + error.message);
@@ -669,4 +709,75 @@ function showPaymentConfirmation(requestId, requestData) {
     document.getElementById('paymentCancelBtn').addEventListener('click', () => {
         modal.remove();
     });
+}
+
+// ===== Send Receipt Email =====
+async function sendReceiptEmail(receiptData) {
+    try {
+        // Extract the existing QR code from the page
+        let qrImageBase64 = null;
+
+        // Look for any QR code canvas on the page (from the booking QR display)
+        const allCanvases = document.querySelectorAll('canvas');
+        for (const canvas of allCanvases) {
+            // QR code canvases are typically square and 200x200+
+            if (canvas.width >= 100 && canvas.height >= 100 && canvas.width === canvas.height) {
+                qrImageBase64 = canvas.toDataURL('image/png');
+                break;
+            }
+        }
+
+        // If no QR canvas found, generate one temporarily using the bookingId
+        if (!qrImageBase64 && receiptData.qrCode && typeof QRCode !== 'undefined') {
+            const tempDiv = document.createElement('div');
+            tempDiv.style.cssText = 'position: absolute; left: -9999px; top: -9999px;';
+            document.body.appendChild(tempDiv);
+
+            new QRCode(tempDiv, {
+                text: receiptData.qrCode,
+                width: 200,
+                height: 200,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            // Wait for QR to render
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            const tempCanvas = tempDiv.querySelector('canvas');
+            if (tempCanvas) {
+                qrImageBase64 = tempCanvas.toDataURL('image/png');
+            }
+            document.body.removeChild(tempDiv);
+        }
+
+        const response = await fetch('/api/send-email', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                to: receiptData.to,
+                bookingId: receiptData.bookingId,
+                date: receiptData.date,
+                location: receiptData.location,
+                entry: receiptData.entry,
+                exit: receiptData.exit,
+                duration: receiptData.duration,
+                rate: receiptData.rate,
+                amount: receiptData.amount,
+                qrImage: qrImageBase64
+            })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            console.log('📧 Receipt email sent successfully to', receiptData.to);
+        } else {
+            console.error('Email send failed:', result.error);
+        }
+    } catch (error) {
+        console.error('Email send error:', error);
+    }
 }

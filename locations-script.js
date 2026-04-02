@@ -493,10 +493,9 @@ window.showReceipt = function(data) {
             <!-- Receipt Footer -->
             <div style="background: #f8fafc; padding: 25px; text-align: center; border-top: 1px solid #f1f5f9;">
                 <p style="margin: 0 0 15px; color: #94a3b8; font-size: 12px; line-height: 1.6;">
-                    ${fmtDate(pDateObj)}, ${fmtTime(pDateObj)} · Thank you for using FastPark!<br>
-                    <span style="color: #f59e0b; font-weight: 600;">fastpark.in</span>
+                    ${fmtDate(pDateObj)}, ${fmtTime(pDateObj)} · Thank you for using FastPark!
                 </p>
-                <div style="display: flex; gap: 10px;">
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
                     <button id="saveReceiptBtn" style="flex: 2; padding: 14px; background: #f59e0b; color: white; border: none; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; transition: transform 0.2s; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);">
                         ↓ Save Receipt
                     </button>
@@ -504,6 +503,9 @@ window.showReceipt = function(data) {
                         Close
                     </button>
                 </div>
+                <button id="emailReceiptBtn" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; border: none; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);">
+                    <span style="margin-right: 6px;">📧</span> Email Receipt
+                </button>
             </div>
         </div>
     `;
@@ -531,6 +533,21 @@ window.showReceipt = function(data) {
             closeBtn.style.display = 'block';
         }, 500);
     });
+
+    // Email Receipt button handler
+    modal.querySelector('#emailReceiptBtn').addEventListener('click', () => {
+        sendReceiptToEmail({
+            bookingId: bId,
+            date: fmtDate(eDateObj),
+            location: `${gateName}, Slot ${data.slotNumber || 'N/A'}`,
+            entry: entryStr,
+            exit: exitStr,
+            duration: `${durationMins} min`,
+            rate: '₹80/hr',
+            amount: data.amount || 0,
+            qrCode: bId  // The QR code text (bookingId) to regenerate for email
+        }, modal);
+    });
 };
 
 // ===== Update Profile UI =====
@@ -551,5 +568,115 @@ function updateProfileUI() {
     if (currentUser.metadata && currentUser.metadata.creationTime) {
         const creationDate = new Date(currentUser.metadata.creationTime);
         document.getElementById('memberSince').textContent = creationDate.toLocaleDateString();
+    }
+}
+
+// ===== Send Receipt to Email =====
+async function sendReceiptToEmail(receiptData, modal) {
+    if (!currentUser || !currentUser.email) {
+        alert('Please log in to send email receipt.');
+        return;
+    }
+
+    const emailBtn = modal ? modal.querySelector('#emailReceiptBtn') : null;
+    if (emailBtn) {
+        emailBtn.disabled = true;
+        emailBtn.innerHTML = '<span style="margin-right: 6px;">⏳</span> Sending...';
+        emailBtn.style.opacity = '0.7';
+    }
+
+    try {
+        // Try to extract QR code from the active booking section (canvas in bookingQrCode div)
+        let qrImageBase64 = null;
+
+        // Method 1: Check the My Booking tab's QR code container
+        const bookingQrContainer = document.getElementById('bookingQrCode');
+        if (bookingQrContainer) {
+            const canvas = bookingQrContainer.querySelector('canvas');
+            if (canvas) {
+                qrImageBase64 = canvas.toDataURL('image/png');
+            } else {
+                const img = bookingQrContainer.querySelector('img');
+                if (img && img.src) {
+                    qrImageBase64 = img.src;
+                }
+            }
+        }
+
+        // Method 2: If no QR found in My Booking, generate one temporarily using the bookingId
+        if (!qrImageBase64 && receiptData.qrCode && typeof QRCode !== 'undefined') {
+            const tempDiv = document.createElement('div');
+            tempDiv.style.cssText = 'position: absolute; left: -9999px; top: -9999px;';
+            document.body.appendChild(tempDiv);
+
+            new QRCode(tempDiv, {
+                text: receiptData.qrCode,
+                width: 200,
+                height: 200,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            // Wait for QR to render
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            const tempCanvas = tempDiv.querySelector('canvas');
+            if (tempCanvas) {
+                qrImageBase64 = tempCanvas.toDataURL('image/png');
+            }
+            document.body.removeChild(tempDiv);
+        }
+
+        // Send to backend
+        const response = await fetch('/api/send-email', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                to: currentUser.email,
+                bookingId: receiptData.bookingId,
+                date: receiptData.date,
+                location: receiptData.location,
+                entry: receiptData.entry,
+                exit: receiptData.exit,
+                duration: receiptData.duration,
+                rate: receiptData.rate,
+                amount: receiptData.amount,
+                qrImage: qrImageBase64
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            if (emailBtn) {
+                emailBtn.innerHTML = '<span style="margin-right: 6px;">✅</span> Email Sent!';
+                emailBtn.style.background = 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)';
+                emailBtn.style.opacity = '1';
+                setTimeout(() => {
+                    emailBtn.innerHTML = '<span style="margin-right: 6px;">📧</span> Email Receipt';
+                    emailBtn.style.background = 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)';
+                    emailBtn.disabled = false;
+                }, 3000);
+            }
+        } else {
+            throw new Error(result.error || 'Failed to send email');
+        }
+
+    } catch (error) {
+        console.error('Email send error:', error);
+        if (emailBtn) {
+            emailBtn.innerHTML = '<span style="margin-right: 6px;">❌</span> Failed - Retry';
+            emailBtn.style.background = '#ef4444';
+            emailBtn.style.opacity = '1';
+            emailBtn.disabled = false;
+            setTimeout(() => {
+                emailBtn.innerHTML = '<span style="margin-right: 6px;">📧</span> Email Receipt';
+                emailBtn.style.background = 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)';
+            }, 3000);
+        }
+        alert('Failed to send receipt email. Please try again later.');
     }
 }
