@@ -146,18 +146,7 @@ export default async function handler(req, res) {
                 </td>
               </tr>
 
-              <!-- QR Code Section -->
-              ${qrImage ? `
-              <tr>
-                <td style="padding: 0 30px 25px; text-align: center;">
-                  <div style="background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 16px; padding: 25px;">
-                    <p style="margin: 0 0 15px; color: #475569; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;">QR Entry / Exit Pass</p>
-                    <img src="${qrImage}" width="180" height="180" style="display: block; margin: 0 auto 15px; border-radius: 8px;" alt="QR Code" />
-                    <p style="margin: 0; color: #64748b; font-size: 12px; line-height: 1.6;">Scan this QR for entry/exit verification</p>
-                  </div>
-                </td>
-              </tr>
-              ` : ''}
+
 
               <!-- Footer -->
               <tr>
