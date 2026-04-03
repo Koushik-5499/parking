@@ -146,6 +146,13 @@ export default async function handler(req, res) {
               </tr>
 
 
+              <!-- QR Code -->
+              <tr>
+                <td style="padding: 0 30px 25px; text-align: center;">
+                  <p style="margin: 0 0 10px; color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Booking QR Code</p>
+                  <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(bookingId || 'N/A')}" alt="Booking QR Code" width="150" height="150" style="border-radius: 10px; border: 2px solid #e2e8f0; padding: 10px; background: white; display: inline-block;" />
+                </td>
+              </tr>
 
               <!-- Footer -->
               <tr>
