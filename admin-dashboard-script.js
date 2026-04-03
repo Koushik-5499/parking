@@ -318,13 +318,11 @@ async function searchBookings() {
                 
                 let entryStr = 'N/A';
                 if (r.entryTime?.toDate) entryStr = fmtDate(r.entryTime.toDate());
-                else if (r.bookedAt?.toDate) entryStr = fmtDate(r.bookedAt.toDate());
+                else if (r.entryTime) entryStr = fmtDate(new Date(r.entryTime));
                 
                 let exitStr = 'N/A';
                 if (r.exitTime?.toDate) exitStr = fmtDate(r.exitTime.toDate());
-                
-                let paymentStr = 'N/A';
-                if (r.paymentTime?.toDate) paymentStr = fmtDate(r.paymentTime.toDate());
+                else if (r.exitTime) exitStr = fmtDate(new Date(r.exitTime));
                 
                 const amount = r.amount || r.price || 0;
                 const status = r.status || (r._source === 'payment' ? 'Completed' : 'Active');
@@ -366,20 +364,16 @@ async function searchBookings() {
                             <p style="color: #38bdf8; margin: 2px 0 0; font-weight: 700; font-size: 18px;">₹${amount}</p>
                         </div>
                         <div>
-                            <span style="color: #9ca3af; font-size: 12px;">Entry</span>
+                            <span style="color: #9ca3af; font-size: 12px;">Entry Time</span>
                             <p style="color: #e0e7ff; margin: 2px 0 0; font-weight: 600;">${entryStr}</p>
                         </div>
                         <div>
-                            <span style="color: #9ca3af; font-size: 12px;">Exit</span>
+                            <span style="color: #9ca3af; font-size: 12px;">Exit Time</span>
                             <p style="color: #e0e7ff; margin: 2px 0 0; font-weight: 600;">${exitStr}</p>
                         </div>
                         <div>
                             <span style="color: #9ca3af; font-size: 12px;">Payment Method</span>
                             <p style="color: #e0e7ff; margin: 2px 0 0; font-weight: 600;">${r.paymentMethod || 'N/A'}</p>
-                        </div>
-                        <div>
-                            <span style="color: #9ca3af; font-size: 12px;">Payment Time</span>
-                            <p style="color: #e0e7ff; margin: 2px 0 0; font-weight: 600;">${paymentStr}</p>
                         </div>
                     </div>
                 </div>
