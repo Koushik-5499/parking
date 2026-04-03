@@ -84,6 +84,11 @@ signupForm.addEventListener('submit', async function (e) {
         signupBtn.disabled = false;
         signupBtn.style.opacity = '1';
 
+        // Redirect to login page after popup disappears
+        setTimeout(() => {
+            window.location.href = 'index.html';
+        }, 8000);
+
     } catch (error) {
         let errorMessage = error.message;
 
