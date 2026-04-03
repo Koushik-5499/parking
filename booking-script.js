@@ -10,7 +10,8 @@ import {
     doc,
     updateDoc,
     serverTimestamp,
-    getDoc
+    getDoc,
+    writeBatch
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -83,7 +84,11 @@ async function handleBookingSubmit(e) {
 
     try {
         // Add booking to Firestore
-        const bookingRef = await addDoc(collection(db, 'bookings'), {
+        const batch = writeBatch(db);
+        
+        // Add booking to Firestore
+        const bookingRef = doc(collection(db, 'bookings'));
+        batch.set(bookingRef, {
             slotNumber: slotData.slotNumber,
             location: slotData.location,
             name: name,
@@ -100,7 +105,7 @@ async function handleBookingSubmit(e) {
 
         // Update slot status to reserved
         const slotRef = doc(db, 'parking_locations', slotData.locationId, 'slots', slotData.id);
-        await updateDoc(slotRef, {
+        batch.update(slotRef, {
             status: 'reserved',
             bookedBy: name,
             phone: phone,
@@ -111,6 +116,8 @@ async function handleBookingSubmit(e) {
             userEmail: currentUser.email,
             bookingTime: serverTimestamp()
         });
+        
+        await batch.commit();
 
         // Store booking data for ticket page
         localStorage.setItem('bookingData', JSON.stringify({

@@ -164,7 +164,7 @@ export default async function handler(req, res) {
     `;
 
     await resend.emails.send({
-      from: "onboarding@resend.dev",
+      from: "FastPark <noreply@fastpark.online>",
       to: to,
       subject: "Parking Receipt",
       html: htmlContent

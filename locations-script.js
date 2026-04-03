@@ -9,7 +9,8 @@ import {
     collection,
     query,
     where,
-    getDocs
+    getDocs,
+    limit
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -183,7 +184,7 @@ async function loadMyActiveBooking() {
 
         for (const loc of locations) {
             const slotsRef = collection(db, 'parking_locations', loc, 'slots');
-            const q = query(slotsRef, where('userEmail', '==', currentUser.email));
+            const q = query(slotsRef, where('userEmail', '==', currentUser.email), limit(1));
             const querySnapshot = await getDocs(q);
 
             querySnapshot.forEach(docSnap => {
@@ -309,9 +310,14 @@ async function loadMyActiveBooking() {
 }
 
 // ===== Load Booking History =====
-async function loadHistory() {
+let historyLastFetched = 0;
+async function loadHistory(force = false) {
     const historyList = document.getElementById('historyList');
     if (!currentUser) return;
+    
+    // Cache for 60 seconds
+    if (!force && Date.now() - historyLastFetched < 60000) return;
+    historyLastFetched = Date.now();
 
     try {
         const historyRef = collection(db, 'payment_transactions');

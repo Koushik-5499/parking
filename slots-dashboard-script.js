@@ -14,7 +14,9 @@ import {
     query,
     where,
     serverTimestamp,
-    addDoc
+    addDoc,
+    limit,
+    writeBatch
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -281,7 +283,7 @@ async function handleBooking(e) {
             const locations = ['rathinam_main_gate', 'rathinam_gate1', 'rathinam_gate3'];
             for (const loc of locations) {
                 const checkRef = collection(db, 'parking_locations', loc, 'slots');
-                const qCheck = query(checkRef, where('userEmail', '==', userEmail));
+                const qCheck = query(checkRef, where('userEmail', '==', userEmail), limit(1));
                 const qs = await getDocs(qCheck);
                 qs.forEach(d => {
                     const data = d.data();
@@ -480,43 +482,7 @@ window.viewMyQR = function (slotId, slotNumber) {
     }
 };
 
-// AUTO-CANCEL LOGIC
-setInterval(checkPendingTimeout, 60000);
-
-async function checkPendingTimeout() {
-    if (!selectedLocation) return;
-
-    try {
-        const slotsRef = collection(db, 'parking_locations', selectedLocation, 'slots');
-        const q = query(slotsRef, where('status', '==', 'pending'));
-        const querySnapshot = await getDocs(q);
-
-        querySnapshot.forEach(async (docSnap) => {
-            const data = docSnap.data();
-            if (data.status === 'pending' && data.bookingTime) {
-                const now = Date.now();
-                const diff = now - data.bookingTime;
-
-                if (diff > 1800000) { // 30 minutes = 1800000 ms
-                    await updateDoc(docSnap.ref, {
-                        status: 'available',
-                        bookingTime: null,
-                        bookedBy: null,
-                        phone: null,
-                        vehicleType: null,
-                        vehicleNumber: null,
-                        qrCode: null,
-                        bookingId: null,
-                        userEmail: null,
-                        price: null
-                    });
-                }
-            }
-        });
-    } catch (err) {
-        console.error("Auto cancel error:", err);
-    }
-}
+// AUTO-CANCEL LOGIC REMOVED TO REDUCE READS/WRITES
 
 // UI TIMER LOGIC
 setInterval(() => {

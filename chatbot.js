@@ -47,18 +47,17 @@ async function fetchParkingData() {
     }
 }
 
-// Initialize data fetch
-fetchParkingData();
-setInterval(fetchParkingData, 30000); // Update every 30 seconds
-
+// Data fetched on demand
 // Chatbot logic
-function getBotResponse(userMessage) {
+async function getBotResponse(userMessage) {
     const msg = userMessage.toLowerCase().trim();
 
     // Parking slots/availability queries
     if (msg.includes('parking slot') || msg.includes('parking available') ||
         msg.includes('available slot') || msg.includes('how many slot') ||
         msg.includes('slots available') || msg.includes('available parking')) {
+        
+        await fetchParkingData();
 
         // Check for specific location
         if (msg.includes('main gate')) {
@@ -327,8 +326,8 @@ function createChatbotUI() {
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
         // Get bot response
-        setTimeout(() => {
-            const botResponse = getBotResponse(message);
+        setTimeout(async () => {
+            const botResponse = await getBotResponse(message);
             const botMessageHTML = `
                 <div class="bot-message" style="margin-bottom: 15px;">
                     <div style="background: #e5e7eb; padding: 10px 15px; border-radius: 12px; border-bottom-left-radius: 4px; max-width: 80%; display: inline-block;">
