@@ -260,20 +260,45 @@
                     <i class="fas fa-search"></i> Search Bookings
                 </h2>
                 <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 20px;">
+                    <!-- Search Value: text input OR camera button depending on mode -->
                     <div style="flex: 2; min-width: 200px;">
                         <label style="display: block; margin-bottom: 6px; color: #e0e7ff; font-weight: 700; font-size: 13px;">Search Value</label>
+                        <!-- Normal text input (default) -->
                         <input type="text" id="bookingSearchInput" placeholder="Enter Booking ID, Phone or Email..."
                             style="width: 100%; padding: 12px 16px; border: 2px solid rgba(255,255,255,0.15); border-radius: 10px; box-sizing: border-box; font-size: 14px; background: rgba(255,255,255,0.08); color: white; outline: none;">
+                        <!-- Camera open button — shown only in QR mode -->
+                        <button id="searchQrOpenCameraBtn"
+                            style="display: none; width: 100%; padding: 12px 16px; background: linear-gradient(135deg, #2563eb, #1e40af); color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 14px; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 15px rgba(37,99,235,0.4);">
+                            <i class="fas fa-camera"></i> Open camera to scan
+                        </button>
+                        <!-- Camera reader — shown when scanning -->
+                        <div id="searchQrReaderWrap" style="display: none; margin-top: 10px; border-radius: 12px; overflow: hidden;">
+                            <div id="searchQrReader"></div>
+                            <button id="searchQrCloseBtn"
+                                style="width: 100%; margin-top: 8px; padding: 10px; background: rgba(255,255,255,0.1); color: #e0e7ff; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">
+                                <i class="fas fa-times"></i> Close Scanner
+                            </button>
+                        </div>
                     </div>
+
+                    <!-- Search By dropdown with QR icon inside -->
                     <div style="flex: 1; min-width: 150px;">
                         <label style="display: block; margin-bottom: 6px; color: #e0e7ff; font-weight: 700; font-size: 13px;">Search By</label>
-                        <select id="bookingSearchType"
-                            style="width: 100%; padding: 12px 16px; border: 2px solid rgba(255,255,255,0.15); border-radius: 10px; box-sizing: border-box; font-size: 14px; background: rgba(255,255,255,0.08); color: white; outline: none; cursor: pointer;">
-                            <option value="bookingId" style="background: #1a1a2e;">Booking ID</option>
-                            <option value="phone" style="background: #1a1a2e;">Phone Number</option>
-                            <option value="email" style="background: #1a1a2e;">Email ID</option>
-                        </select>
+                        <div style="display: flex; align-items: center; border: 2px solid rgba(255,255,255,0.15); border-radius: 10px; background: rgba(255,255,255,0.08); overflow: hidden;">
+                            <select id="bookingSearchType"
+                                style="flex: 1; padding: 12px 10px; border: none; box-sizing: border-box; font-size: 14px; background: transparent; color: white; outline: none; cursor: pointer;">
+                                <option value="bookingId" style="background: #1a1a2e;">Booking ID</option>
+                                <option value="phone" style="background: #1a1a2e;">Phone Number</option>
+                                <option value="email" style="background: #1a1a2e;">Email ID</option>
+                            </select>
+                            <!-- QR icon button — inside the Search By field -->
+                            <button id="searchQrToggleBtn" title="Scan QR Code"
+                                style="padding: 0 12px; height: 100%; background: rgba(102,126,234,0.25); color: #a5b4fc; border: none; border-left: 2px solid rgba(255,255,255,0.1); cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: all 0.3s; min-height: 46px;">
+                                <i class="fas fa-qrcode"></i>
+                            </button>
+                        </div>
                     </div>
+
                     <div>
                         <button id="bookingSearchBtn"
                             style="padding: 12px 28px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 8px; height: 46px; box-shadow: 0 4px 15px rgba(102,126,234,0.4); transition: all 0.3s;">
@@ -281,6 +306,7 @@
                         </button>
                     </div>
                 </div>
+
                 <div id="bookingSearchResults">
                     <div style="text-align: center; padding: 50px 20px; color: #9ca3af;">
                         <i class="fas fa-search" style="font-size: 48px; margin-bottom: 15px; opacity: 0.3;"></i>

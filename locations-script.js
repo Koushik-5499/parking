@@ -499,7 +499,8 @@ window.showReceipt = function(data) {
             <!-- Receipt Footer -->
             <div style="background: #f8fafc; padding: 25px; text-align: center; border-top: 1px solid #f1f5f9;">
                 <p style="margin: 0 0 15px; color: #94a3b8; font-size: 12px; line-height: 1.6;">
-                    ${fmtDate(pDateObj)}, ${fmtTime(pDateObj)} · Thank you for using FastPark!
+                    ${fmtDate(pDateObj)}, ${fmtTime(pDateObj)} · Thank you for using FastPark!<br>
+                    <a href="https://fastpark.online" target="_blank" style="color: #3b82f6; font-weight: 700; text-decoration: none; font-size: 13px;">🌐 fastpark.online</a>
                 </p>
                 <div style="display: flex; gap: 10px; margin-bottom: 10px;">
                     <button id="saveReceiptBtn" style="flex: 2; padding: 14px; background: #f59e0b; color: white; border: none; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; transition: transform 0.2s; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);">
@@ -509,9 +510,6 @@ window.showReceipt = function(data) {
                         Close
                     </button>
                 </div>
-                <button id="emailReceiptBtn" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; border: none; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);">
-                    <span style="margin-right: 6px;">📧</span> Email Receipt
-                </button>
             </div>
         </div>
     `;
@@ -540,20 +538,6 @@ window.showReceipt = function(data) {
         }, 500);
     });
 
-    // Email Receipt button handler
-    modal.querySelector('#emailReceiptBtn').addEventListener('click', () => {
-        sendReceiptToEmail({
-            bookingId: bId,
-            date: fmtDate(eDateObj),
-            location: `${gateName}, Slot ${data.slotNumber || 'N/A'}`,
-            entry: entryStr,
-            exit: exitStr,
-            duration: `${durationMins} min`,
-            rate: '₹80/hr',
-            amount: data.amount || 0,
-            qrCode: bId  // The QR code text (bookingId) to regenerate for email
-        }, modal);
-    });
 };
 
 // ===== Update Profile UI =====

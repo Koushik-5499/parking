@@ -83,6 +83,91 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('bookingSearchInput')?.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') searchBookings();
         });
+
+        // ── QR Scanner in Search By ──────────────────────────────────────────
+        const searchTypeEl  = document.getElementById('bookingSearchType');
+        const qrToggleBtn   = document.getElementById('searchQrToggleBtn');
+        const searchInput   = document.getElementById('bookingSearchInput');
+        const openCameraBtn = document.getElementById('searchQrOpenCameraBtn');
+        const qrReaderWrap  = document.getElementById('searchQrReaderWrap');
+        const qrCloseBtn    = document.getElementById('searchQrCloseBtn');
+
+        let searchQrInstance = null;
+        let qrMode = false;
+
+        // QR icon only works when Booking ID is selected; dim it otherwise
+        function updateQrIcon() {
+            if (searchTypeEl?.value === 'bookingId') {
+                qrToggleBtn.style.opacity = '1';
+                qrToggleBtn.style.cursor = 'pointer';
+            } else {
+                qrToggleBtn.style.opacity = '0.3';
+                qrToggleBtn.style.cursor = 'not-allowed';
+                exitQrMode();
+            }
+        }
+        searchTypeEl?.addEventListener('change', updateQrIcon);
+        updateQrIcon();
+
+        // Click QR icon inside Search By → toggle QR mode
+        qrToggleBtn?.addEventListener('click', () => {
+            if (searchTypeEl?.value !== 'bookingId') return;
+            qrMode ? exitQrMode() : enterQrMode();
+        });
+
+        function enterQrMode() {
+            qrMode = true;
+            searchInput.style.display = 'none';
+            openCameraBtn.style.display = 'flex';
+            qrToggleBtn.style.background = 'rgba(102,126,234,0.5)';
+            qrToggleBtn.style.color = '#fff';
+        }
+
+        function exitQrMode() {
+            qrMode = false;
+            searchInput.style.display = 'block';
+            openCameraBtn.style.display = 'none';
+            qrReaderWrap.style.display = 'none';
+            stopSearchQr();
+            qrToggleBtn.style.background = 'rgba(102,126,234,0.25)';
+            qrToggleBtn.style.color = '#a5b4fc';
+        }
+
+        // "Open camera to scan" clicked
+        openCameraBtn?.addEventListener('click', async () => {
+            openCameraBtn.style.display = 'none';
+            qrReaderWrap.style.display = 'block';
+            searchQrInstance = new Html5Qrcode('searchQrReader');
+            try {
+                await searchQrInstance.start(
+                    { facingMode: 'environment' },
+                    { fps: 10, qrbox: { width: 250, height: 250 } },
+                    (decodedText) => {
+                        searchInput.value = decodedText.trim();
+                        exitQrMode();
+                        searchBookings();
+                    },
+                    () => {}
+                );
+            } catch (err) {
+                qrReaderWrap.style.display = 'none';
+                openCameraBtn.style.display = 'flex';
+                alert('Camera access failed: ' + err);
+            }
+        });
+
+        qrCloseBtn?.addEventListener('click', () => {
+            qrReaderWrap.style.display = 'none';
+            openCameraBtn.style.display = 'flex';
+            stopSearchQr();
+        });
+
+        async function stopSearchQr() {
+            if (searchQrInstance) {
+                try { await searchQrInstance.stop(); } catch (_) {}
+                searchQrInstance = null;
+            }
+        }
     });
 
     document.getElementById('logoutBtn').addEventListener('click', async () => {
