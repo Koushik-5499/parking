@@ -7,6 +7,34 @@
     <title>Smart Metro Parking - Sign Up</title>
     <link rel="stylesheet" href="parking-styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .auth-alert {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 18px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 18px;
+            animation: alertSlideIn 0.35s ease;
+        }
+        .auth-alert i { font-size: 18px; flex-shrink: 0; }
+        .auth-alert-success {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            color: #065f46;
+            border: 1px solid #6ee7b7;
+        }
+        .auth-alert-error {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+        @keyframes alertSlideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
 </head>
 
 <body>
@@ -58,6 +86,7 @@
     </div>
 
     <script type="module" src="signup-script.js"></script>
+    <script defer src="/_vercel/insights/script.js"></script>
 </body>
 
 </html>

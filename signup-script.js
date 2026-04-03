@@ -1,11 +1,11 @@
-// Firebase Configuration
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {
     getAuth,
     createUserWithEmailAndPassword,
+    sendEmailVerification,
     GoogleAuthProvider,
     signInWithPopup
-} from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
 const firebaseConfig = {
     apiKey: "AIzaSyBMZz7gVpJjJ2WBaTlutAYC-UnDgXDRGuE",
@@ -16,24 +16,41 @@ const firebaseConfig = {
     appId: "1:544641174438:web:c9baa75180521bbe061d67"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
-// Toggle password visibility
+function showAlert(message, type) {
+    const existing = document.querySelector('.auth-alert');
+    if (existing) existing.remove();
+
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `auth-alert auth-alert-${type}`;
+    alertDiv.innerHTML = `
+        <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+        <span>${message}</span>
+    `;
+
+    const form = document.querySelector('.signup-form');
+    form.insertBefore(alertDiv, form.firstChild);
+
+    if (type === 'success') {
+        setTimeout(() => alertDiv.remove(), 8000);
+    } else {
+        setTimeout(() => alertDiv.remove(), 5000);
+    }
+}
+
 const togglePassword = document.getElementById('togglePassword');
 const passwordInput = document.getElementById('signupPassword');
 
 togglePassword.addEventListener('click', function () {
     const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
     passwordInput.setAttribute('type', type);
-
     this.classList.toggle('fa-eye');
     this.classList.toggle('fa-eye-slash');
 });
 
-// Sign Up Form Handler
 const signupForm = document.querySelector('.signup-form');
 const signupBtn = signupForm.querySelector('.login-btn');
 const emailInput = document.getElementById('signupEmail');
@@ -44,37 +61,32 @@ signupForm.addEventListener('submit', async function (e) {
     const email = emailInput.value.trim();
     const password = passwordInput.value;
 
-    // Validation
     if (!email || !password) {
-        alert('Please enter both email and password');
+        showAlert('Please enter both email and password', 'error');
         return;
     }
 
     if (password.length < 6) {
-        alert('Password must be at least 6 characters long');
+        showAlert('Password must be at least 6 characters long', 'error');
         return;
     }
 
-    // Show loading state
     signupBtn.disabled = true;
     signupBtn.style.opacity = '0.7';
     signupBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
 
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        console.log('User created:', userCredential.user);
+        await sendEmailVerification(userCredential.user);
+        showAlert('Check your email for verification. If not found, check Spam/Junk folder.', 'success');
 
-        alert('Account created successfully!');
-
-        // Redirect to login page
-        window.location.href = 'index.html';
+        signupBtn.textContent = 'Sign Up';
+        signupBtn.disabled = false;
+        signupBtn.style.opacity = '1';
 
     } catch (error) {
-        console.error('Sign up error:', error);
-
         let errorMessage = error.message;
 
-        // User-friendly error messages
         switch (error.code) {
             case 'auth/email-already-in-use':
                 errorMessage = 'This email is already registered. Please login instead.';
@@ -90,19 +102,15 @@ signupForm.addEventListener('submit', async function (e) {
                 break;
         }
 
-        alert(errorMessage);
-
-        // Reset button state
+        showAlert(errorMessage, 'error');
         signupBtn.textContent = 'Sign Up';
         signupBtn.disabled = false;
         signupBtn.style.opacity = '1';
     }
 });
 
-// Google Sign-In
 const googleBtn = document.querySelector('.google-btn');
 googleBtn.addEventListener('click', async function () {
-    // Show loading state
     this.disabled = true;
     this.style.opacity = '0.7';
     const originalContent = this.innerHTML;
@@ -110,22 +118,17 @@ googleBtn.addEventListener('click', async function () {
 
     try {
         const result = await signInWithPopup(auth, googleProvider);
-        console.log('User signed up with Google:', result.user);
 
-        alert('Google Login Successful');
+        showAlert('Google Login Successful! Redirecting...', 'success');
 
-        // Check if admin or customer
         if (result.user.email === 'koushik123@gmail.com') {
-            window.location.href = 'admin-dashboard.html';
+            setTimeout(() => { window.location.href = 'admin-dashboard.html'; }, 1500);
         } else {
-            window.location.href = 'locations.html';
+            setTimeout(() => { window.location.href = 'locations.html'; }, 1500);
         }
 
     } catch (error) {
-        console.error('Google sign-in error:', error);
-        alert(error.message);
-
-        // Reset button state
+        showAlert(error.message, 'error');
         this.innerHTML = originalContent;
         this.disabled = false;
         this.style.opacity = '1';

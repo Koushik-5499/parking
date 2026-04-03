@@ -6,6 +6,61 @@
     <title>Smart Metro Parking - Login</title>
     <link rel="stylesheet" href="parking-styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .auth-alert {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 18px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 18px;
+            animation: alertSlideIn 0.35s ease;
+        }
+        .auth-alert i { font-size: 18px; flex-shrink: 0; }
+        .auth-alert-success {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            color: #065f46;
+            border: 1px solid #6ee7b7;
+        }
+        .auth-alert-error {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+        .auth-alert-warning {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            color: #92400e;
+            border: 1px solid #fcd34d;
+        }
+        @keyframes alertSlideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .resend-btn {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: transparent;
+            color: #7c3aed;
+            padding: 12px;
+            border: 2px dashed #7c3aed;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            width: 100%;
+        }
+        .resend-btn:hover {
+            background: rgba(124, 58, 237, 0.08);
+            border-style: solid;
+        }
+        .resend-btn i { font-size: 15px; }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -31,6 +86,11 @@
 
                 <button type="submit" class="login-btn">Login</button>
 
+                <button type="button" class="resend-btn" id="resendVerificationBtn">
+                    <i class="fas fa-paper-plane"></i>
+                    Resend Verification Email
+                </button>
+
                 <div class="divider">
                     <span>OR</span>
                 </div>
@@ -53,5 +113,6 @@
     </div>
 
     <script type="module" src="parking-script.js"></script>
+    <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

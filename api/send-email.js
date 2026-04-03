@@ -18,7 +18,6 @@ export default async function handler(req, res) {
     duration,
     rate,
     amount,
-    qrImage
   } = req.body;
 
   // Validate required fields
