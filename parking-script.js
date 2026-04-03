@@ -92,7 +92,7 @@ loginForm.addEventListener('submit', async function (e) {
         if (user.emailVerified) {
             showAlert('Login successful! Redirecting...', 'success');
 
-            if (user.email === 'koushik123@gmail.com') {
+            if (user.email === 'koushik4680@gmail.com') {
                 setTimeout(() => { window.location.href = 'admin-dashboard.html'; }, 1500);
             } else {
                 setTimeout(() => { window.location.href = 'locations.html'; }, 1500);
@@ -169,7 +169,7 @@ googleBtn.addEventListener('click', async function () {
         const result = await signInWithPopup(auth, googleProvider);
         showAlert('Google sign-in successful! Redirecting...', 'success');
 
-        if (result.user.email === 'koushik123@gmail.com') {
+        if (result.user.email === 'koushik4680@gmail.com') {
             setTimeout(() => { window.location.href = 'admin-dashboard.html'; }, 1500);
         } else {
             setTimeout(() => { window.location.href = 'locations.html'; }, 1500);

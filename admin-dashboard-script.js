@@ -33,7 +33,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-const ADMIN_EMAIL = "koushik123@gmail.com";
+const ADMIN_EMAIL = "koushik4680@gmail.com";
 
 // Format date as dd-mm-yyyy HH:MM
 function fmtDate(d) {

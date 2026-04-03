@@ -34,7 +34,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 // Admin Configuration
-const ADMIN_EMAIL = "koushik123@gmail.com";
+const ADMIN_EMAIL = "koushik4680@gmail.com";
 let currentUser = null;
 let isAdmin = false;
 let currentBookingSlot = null;

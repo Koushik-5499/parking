@@ -121,7 +121,7 @@ googleBtn.addEventListener('click', async function () {
 
         showAlert('Google Login Successful! Redirecting...', 'success');
 
-        if (result.user.email === 'koushik123@gmail.com') {
+        if (result.user.email === 'koushik4680@gmail.com') {
             setTimeout(() => { window.location.href = 'admin-dashboard.html'; }, 1500);
         } else {
             setTimeout(() => { window.location.href = 'locations.html'; }, 1500);
