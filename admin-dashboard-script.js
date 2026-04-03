@@ -296,6 +296,26 @@ async function searchBookings() {
             if (match) results.push(data);
         });
         
+        // Supplement missing entryTime for older transactions from 'reports' collection
+        const hasMissingEntry = results.some(r => !r.entryTime);
+        if (hasMissingEntry) {
+            const reportsRef = collection(db, 'reports');
+            const reportsSnap = await getDocs(reportsRef);
+            
+            results.forEach(r => {
+                if (!r.entryTime) {
+                    reportsSnap.forEach(rDoc => {
+                        const rData = rDoc.data();
+                        const rBid = rData.bookingId || rData.qrCode;
+                        const myBid = r.bookingId || r.qrCode;
+                        if (rBid && myBid && rBid === myBid && rData.entryTime) {
+                            r.entryTime = rData.entryTime;
+                        }
+                    });
+                }
+            });
+        }
+        
         // Render results
         if (results.length === 0) {
             resultsDiv.innerHTML = `
@@ -1079,7 +1099,8 @@ window.processExit = async function (locationId, slotId) {
                     bookingId: slotData.bookingId || slotData.qrCode || '',
                     paymentMethod: 'online',
                     paymentTime: serverTimestamp(),
-                    exitTime: exitDate
+                    exitTime: exitDate,
+                    entryTime: entryDate
                 });
 
                 // NOW clear the slot and make it available
@@ -1238,7 +1259,8 @@ window.processExit = async function (locationId, slotId) {
                     bookingId: slotData.bookingId || slotData.qrCode || '',
                     paymentMethod: 'cash',
                     paymentTime: serverTimestamp(),
-                    exitTime: exitDate
+                    exitTime: exitDate,
+                    entryTime: entryDate
                 });
 
                 // NOW clear the slot and make it available
