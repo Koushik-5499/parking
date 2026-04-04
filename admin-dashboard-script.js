@@ -194,9 +194,13 @@ function loadEarnings() {
         // This month: start of month
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
         
+        // This year: start of year
+        const yearStart = new Date(now.getFullYear(), 0, 1);
+        
         let dailyTotal = 0;
         let weeklyTotal = 0;
         let monthlyTotal = 0;
+        let yearlyTotal = 0;
         
         snapshot.forEach(docSnap => {
             const data = docSnap.data();
@@ -211,6 +215,9 @@ function loadEarnings() {
             
             if (!paymentDate) return;
             
+            if (paymentDate >= yearStart) {
+                yearlyTotal += amount;
+            }
             if (paymentDate >= monthStart) {
                 monthlyTotal += amount;
             }
@@ -225,10 +232,12 @@ function loadEarnings() {
         const dailyEl = document.getElementById('dailyEarnings');
         const weeklyEl = document.getElementById('weeklyEarnings');
         const monthlyEl = document.getElementById('monthlyEarnings');
+        const yearlyEl = document.getElementById('yearlyEarnings');
         
         if (dailyEl) dailyEl.textContent = `₹${dailyTotal}`;
         if (weeklyEl) weeklyEl.textContent = `₹${weeklyTotal}`;
         if (monthlyEl) monthlyEl.textContent = `₹${monthlyTotal}`;
+        if (yearlyEl) yearlyEl.textContent = `₹${yearlyTotal}`;
     });
 }
 
