@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Select Location - Smart Metro Parking</title>
+    <title>Select Location - FASTPARK</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -466,7 +466,10 @@
         <!-- ===== SLOTS SECTION (Default) ===== -->
         <div id="slots-section" class="dashboard-section active">
             <div class="header">
-                <h1><i class="fas fa-parking"></i> Smart Metro Parking</h1>
+                <h1 style="display: flex; align-items: center; gap: 10px;">
+                    <img src="logo.jpg" alt="FastPark Logo" style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover;"> 
+                    FASTPARK
+                </h1>
                 <div class="user-info">
                     <span class="user-email" id="userEmail">Loading...</span>
                     <button class="logout-btn" id="logoutBtn">
@@ -505,8 +508,7 @@
                     <div class="location-name">Rathinam Gate 1</div>
                     <div class="location-desc">Gate 1 parking facility</div>
                     <div class="card-actions">
-                        <button class="book-slots-btn"
-                            onclick="selectLocation('rathinam_gate1', 'Rathinam Gate 1')">
+                        <button class="book-slots-btn" onclick="selectLocation('rathinam_gate1', 'Rathinam Gate 1')">
                             <i class="fas fa-car"></i> Book Slots
                         </button>
                         <button class="direction-btn" onclick="openGate1()">
@@ -522,8 +524,7 @@
                     <div class="location-name">Rathinam Gate 3</div>
                     <div class="location-desc">Gate 3 parking zone</div>
                     <div class="card-actions">
-                        <button class="book-slots-btn"
-                            onclick="selectLocation('rathinam_gate3', 'Rathinam Gate 3')">
+                        <button class="book-slots-btn" onclick="selectLocation('rathinam_gate3', 'Rathinam Gate 3')">
                             <i class="fas fa-car"></i> Book Slots
                         </button>
                         <button class="direction-btn" onclick="openGate3()">

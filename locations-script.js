@@ -314,7 +314,7 @@ let historyLastFetched = 0;
 async function loadHistory(force = false) {
     const historyList = document.getElementById('historyList');
     if (!currentUser) return;
-    
+
     // Cache for 60 seconds
     if (!force && Date.now() - historyLastFetched < 60000) return;
     historyLastFetched = Date.now();
@@ -326,7 +326,7 @@ async function loadHistory(force = false) {
 
         if (querySnapshot.empty) {
             historyList.innerHTML = `
-                <div style="text-align: center; padding: 50px 20px; color: #6b7280;">
+                <div style="text-align: center; padding: 50px 20px; color: #ffffffff;">
                     <i class="fas fa-history" style="font-size: 48px; margin-bottom: 20px; opacity: 0.3;"></i>
                     <p>No history found.</p>
                 </div>
@@ -355,7 +355,14 @@ async function loadHistory(force = false) {
         });
 
         transactions.forEach((data, index) => {
-            const date = data.paymentTime?.toDate ? data.paymentTime.toDate().toLocaleDateString() : 'N/A';
+            let date = 'N/A';
+            if (data.paymentTime?.toDate) {
+                const d = data.paymentTime.toDate();
+                const dd = String(d.getDate()).padStart(2, '0');
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const yy = String(d.getFullYear()).slice(-2);
+                date = `${dd}/${mm}/${yy}`;
+            }
             const price = data.amount || 0;
             const slot = data.slotNumber || 'N/A';
 
@@ -404,7 +411,7 @@ async function loadHistory(force = false) {
 }
 
 // ===== Display Receipt Modal =====
-window.showReceipt = function(data) {
+window.showReceipt = function (data) {
     if (!data) return;
 
     // Try to get realistic times, fallback to payment time
@@ -530,7 +537,7 @@ window.showReceipt = function(data) {
         const originalText = btn.innerHTML;
         btn.innerHTML = "Saving...";
         closeBtn.style.display = 'none';
-        
+
         setTimeout(() => {
             window.print();
             btn.innerHTML = originalText;
@@ -557,7 +564,10 @@ function updateProfileUI() {
     // Set member since date
     if (currentUser.metadata && currentUser.metadata.creationTime) {
         const creationDate = new Date(currentUser.metadata.creationTime);
-        document.getElementById('memberSince').textContent = creationDate.toLocaleDateString();
+        const dd = String(creationDate.getDate()).padStart(2, '0');
+        const mm = String(creationDate.getMonth() + 1).padStart(2, '0');
+        const yy = String(creationDate.getFullYear()).slice(-2);
+        document.getElementById('memberSince').textContent = `${dd}/${mm}/${yy}`;
     }
 }
 
