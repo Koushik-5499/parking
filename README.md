@@ -1,119 +1,84 @@
-# Smart Metro Parking System - Extended Features
+# Smart Metro Parking System
 
-## New Features Added
+A comprehensive and fully functional smart parking system built with HTML, JavaScript, CSS, and Firebase. This system provides a seamless experience for users to book parking slots, security guards to verify entry via QR codes, and administrators to manage slots and track revenue.
 
-### 1. Admin Dashboard (admin.html)
-Access: Admin users only (koushik123@gmail.com)
+## 🚀 Features
 
-**Features:**
-- Dashboard Overview with real-time statistics:
-  - Total Parking Slots
-  - Available Slots
-  - Reserved Slots
-  - Occupied Slots
-  - Total Bookings Today
-  - Total Revenue Today
+### For Users
+- **Authentication**: Secure login and registration using Email/Password or Google.
+- **Location Selection**: Choose from multiple parking locations and view real-time availability.
+- **Slot Booking**: View available slots in real-time, enter vehicle details, and select vehicle type (Car/Bike) with dynamic pricing.
+- **QR Ticket Generation**: Receive a scannable QR ticket upon successful booking.
+- **Auto-Expiry**: Bookings automatically expire after 5 minutes if the vehicle doesn't arrive.
+- **Responsive Design**: Mobile-friendly interface, perfect for booking on the go.
 
-- Bookings Management:
-  - View all bookings in a table
-  - Filter by Location (Rathinam Main Gate, Gate 1, Gate 3)
-  - Filter by Status (Reserved, Occupied, Completed)
-  - Displays: Booking ID, Location, Slot, Name, Phone, Vehicle, Entry Time, Price, Status
+### For Security Guards
+- **QR Scanner**: Built-in camera-based QR code scanner (`html5-qrcode`) for quick verification.
+- **Instant Approval**: Automatically verifies booking status, checks expiry, and updates slot to "Occupied".
+- **Manual Entry**: Option to enter booking IDs manually if the QR code is unreadable.
 
-- Slot Management:
-  - View all slots grouped by location
-  - Real-time slot status updates
-  - Admin actions: Mark Occupied, Mark Available, Mark Exit
+### For Administrators
+- **Comprehensive Dashboard**: Real-time overview of total, available, reserved, and occupied slots, plus daily revenue.
+- **Booking Management**: View all bookings with filters for location and status.
+- **Slot Control**: Manually mark slots as available, occupied, or mark vehicle exit.
+- **Real-Time Synchronization**: All dashboard data syncs instantly across devices using Firebase.
 
-- Revenue Tracking:
-  - Daily revenue summary
-  - Calculated from booking prices
+## 🛠️ Technology Stack
 
-### 2. Security QR Scanner (security.html)
-For security guards at parking entrance
+- **Frontend**: HTML5, CSS3, Vanilla JavaScript
+- **Backend/Database**: Firebase (Firestore, Authentication)
+- **Real-Time Data**: Firestore onSnapshot listeners
+- **QR Code**: QRCode.js (Generation), html5-qrcode (Scanning)
+- **Styling**: Custom CSS with a modern UI and responsive grid.
 
-**Features:**
-- Camera-based QR code scanning using html5-qrcode library
-- Automatic vehicle entry approval
-- Manual booking ID entry option
+## 📁 Project Structure
 
-**QR Code Entry Process:**
-1. User books a slot → System generates QR code with format: `BOOKINGID_SLOTNUMBER_LOCATION_VEHICLENUMBER`
-2. Security scans QR code at entrance
-3. System verifies booking status
-4. If status = "Reserved" → Automatically approves entry
-5. Updates booking status → "Occupied"
-6. Updates slot status → "Occupied"
-7. Displays: ACCESS APPROVED with booking details
-
-**Invalid Cases:**
-- Booking not found → "BOOKING NOT FOUND"
-- Already checked in → "ALREADY CHECKED IN"
-- Booking expired → "BOOKING EXPIRED"
-
-### 3. Enhanced Booking System
-- Added vehicle number field to booking form
-- QR code generation after successful booking
-- Booking status: Reserved → Occupied → Completed
-- Location tracking for each booking
-
-## File Structure
-
-```
+```text
 Parking/
 ├── index.html              # Login page
 ├── signup.html             # Signup page
-├── dashboard.html          # User dashboard (booking slots)
-├── admin.html              # Admin dashboard (NEW)
-├── security.html           # QR scanner (NEW)
-├── parking-script.js       # Login/signup logic
-├── signup-script.js        # Signup logic
-├── dashboard-script.js     # User dashboard logic (updated)
-├── admin-script.js         # Admin dashboard logic (NEW)
-├── security-script.js      # QR scanner logic (NEW)
+├── location.html           # Location selection
+├── dashboard.html          # View parking slots
+├── booking.html            # Booking form
+├── ticket.html             # QR ticket display
+├── admin.html              # Admin dashboard
+├── security.html           # QR scanner
+├── parking-script.js       # Login logic
+├── signup-script.js        # Registration logic
+├── location-script.js      # Location selection logic
+├── dashboard-script.js     # Dashboard logic
+├── booking-script.js       # Booking logic
+├── ticket-script.js        # Ticket logic
+├── admin-script.js         # Admin dashboard logic
+├── security-script.js      # QR scanner logic
 └── parking-styles.css      # Shared styles
 ```
 
-## Firebase Collections
+## 🔄 User Flow
 
-### parking_slots
-- slotNumber
-- status (available/reserved/occupied)
-- location
-- bookedBy
-- phone
-- vehicleType
-- vehicleNumber
-- price
-- occupiedSince
+1. **Login**: User logs in at `index.html`.
+2. **Select Location**: User selects a parking location at `location.html`.
+3. **View Slots**: User browses available slots on `dashboard.html`.
+4. **Book Slot**: User fills out the booking form on `booking.html`.
+5. **Get Ticket**: User receives a QR code on `ticket.html`.
+6. **Arrival**: Security scans the QR code at `security.html` to approve entry.
+7. **Management**: Admin manages slots and views statistics on `admin.html`.
 
-### bookings
-- slotNumber
-- location
-- name
-- phone
-- vehicleNumber
-- vehicleType
-- price
-- bookedAt
-- entryTime
-- exitTime
-- status (reserved/occupied/completed)
-- userId
-- userEmail
+## ⚙️ Setup Instructions
 
-## Usage
+1. **Clone the repository.**
+2. **Configure Firebase**:
+   - Create a Firebase project.
+   - Enable Authentication (Email/Password & Google).
+   - Enable Firestore Database.
+   - Update the Firebase config in the JavaScript files.
+3. **Add Data**: Populate the `parking_slots` collection in Firestore with initial slots.
+4. **Deploy**: Host the project on Firebase Hosting or any standard web server.
 
-1. **User Flow:**
-   - Login → Dashboard → Select available slot → Enter details → Get QR code
-   - Show QR code at entrance → Security scans → Entry approved
+## 🔐 Security Features
 
-2. **Security Flow:**
-   - Open security.html → Scan QR code → Verify booking → Approve/Deny entry
-
-3. **Admin Flow:**
-   - Login with admin credentials → Access admin.html
-   - View statistics, manage bookings, control slots, track revenue
-
-## Real-time Sync
-All updates sync instantly using Firebase Firestore listeners. When a slot changes status, all dashboards update automatically.
+- Mandatory authentication for user pages.
+- Admin-only access controls for the dashboard.
+- QR code payload format: `BOOKINGID_SLOT_LOCATION_VEHICLE`.
+- 5-minute auto-expiry to prevent slot hoarding.
+- Firestore security rules to protect user data.
