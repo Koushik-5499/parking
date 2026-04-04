@@ -43,7 +43,7 @@ export default async function handler(req, res) {
               <!-- Header -->
               <tr>
                 <td style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); padding: 35px 30px; text-align: center;">
-                  <div style="width: 60px; height: 60px; background: rgba(255,255,255,0.2); border-radius: 16px; margin: 0 auto 15px; line-height: 60px; font-size: 28px; font-weight: bold; color: #ffffff;">P</div>
+                  <img src="https://fastpark.online/logo.jpg" alt="FastPark Logo" width="75" height="75" style="border-radius: 18px; margin: 0 auto 15px; display: block; object-fit: cover; box-shadow: 0 8px 16px rgba(0,0,0,0.2);" />
                   <h1 style="margin: 0 0 5px; color: #ffffff; font-size: 26px; font-weight: 900; letter-spacing: -0.5px;">FastPark Receipt</h1>
                   <p style="margin: 0; color: rgba(255,255,255,0.7); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px;">Smart Metro Parking</p>
                 </td>
