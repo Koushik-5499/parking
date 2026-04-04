@@ -1,0 +1,16 @@
+{
+  "name": "email-project",
+  "version": "1.0.0",
+  "description": "FastPark Email Receipt - Vercel Serverless",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1",
+    "resend": "^3.0.0"
+  }
+}
