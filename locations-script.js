@@ -269,7 +269,7 @@ async function loadMyActiveBooking() {
                         </div>
                     </div>
 
-                    <button onclick="window.location.href='slots-dashboard.html'" class="btn-primary-action" style="width: 100%; margin-top: 20px;">
+                    <button onclick="window.selectLocation('${activeBooking.locationId}', '${locName}')" class="btn-primary-action" style="width: 100%; margin-top: 20px;">
                         <i class="fas fa-eye"></i> View Slot Dashboard
                     </button>
                 </div>
