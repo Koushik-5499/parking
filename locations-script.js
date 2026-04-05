@@ -675,130 +675,77 @@ async function sendReceiptToEmail(receiptData, modal) {
 
 async function checkPaymentEnabled(bookingId) {
     try {
-        const bookingRef = doc(db, 'bookings', bookingId);
-        const bookingSnap = await getDoc(bookingRef);
+        const bookingRef = doc(db, 'bookings', bookingId)
+        const bookingSnap = await getDoc(bookingRef)
 
-        if (!bookingSnap.exists()) return;
+        if (!bookingSnap.exists()) return
 
-        const booking = bookingSnap.data();
-        const container = document.getElementById('payBtnContainer');
-        if (!container) return;
+        const booking = bookingSnap.data()
+        const container = document.getElementById('payBtnContainer')
+        if (!container) return
 
         if (booking.status === 'paid') {
-            container.innerHTML = '<div class="payment-success-badge" style="width: 100%; justify-content: center; margin-top: 20px; padding: 12px;"><i class="fas fa-check-circle"></i> PAYMENT COMPLETED</div>';
-            return;
+            container.innerHTML = '<div class="payment-success-badge" style="width: 100%; justify-content: center; margin-top: 20px; padding: 12px;"><i class="fas fa-check-circle"></i> PAYMENT COMPLETED</div>'
+            return
         }
 
         if (booking.paymentEnabled === true && currentUser) {
-            const amount = booking.amount || booking.price || 80;
-            container.innerHTML = '<button class="pay-now-btn" id="payNowBtn"><i class="fas fa-credit-card"></i> Pay Now <span class="pay-amount">' + '\u20B9' + amount + '</span></button>';
+            const amount = booking.amount || booking.price || 80
+            container.innerHTML = '<button class="pay-now-btn" id="payNowBtn"><i class="fas fa-credit-card"></i> Pay Now <span class="pay-amount">' + '\u20B9' + amount + '</span></button>'
 
             document.getElementById('payNowBtn').addEventListener('click', function (e) {
-                e.preventDefault();
-                handleRazorpayPayment(bookingId, amount);
-            });
+                e.preventDefault()
+                openPayment({ id: bookingId, amount: amount })
+            })
         }
     } catch (error) {
-        console.error('Error checking payment:', error);
     }
 }
 
-async function handleRazorpayPayment(bookingId, amount) {
-    const payBtn = document.getElementById('payNowBtn');
-    if (payBtn) {
-        payBtn.disabled = true;
-        payBtn.classList.add('processing');
-        payBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+async function openPayment(booking) {
+    const res = await fetch("/api/createOrder", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            amount: booking.amount * 100
+        })
+    })
+
+    const order = await res.json()
+
+    if (!order.id) {
+        alert("Order failed")
+        return
     }
 
-    try {
-        const orderRes = await fetch("/api/createOrder", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                amount: amount * 100
-            })
-        });
+    const options = {
+        key: "rzp_test_SZquwUDpz1IWQq",
+        amount: order.amount,
+        currency: "INR",
+        order_id: order.id,
+        name: "FASTPARK",
+        handler: async function (response) {
+            try {
+                await updateDoc(doc(db, 'bookings', booking.id), {
+                    status: "paid",
+                    paymentId: response.razorpay_payment_id,
+                    userId: currentUser.uid
+                })
 
-        const order = await orderRes.json();
-
-        var options = {
-            key: "rzp_test_SZquwUDpz1IWQq",
-            amount: amount * 100,
-            currency: "INR",
-            order_id: order.id,
-            name: "Smart Parking",
-            description: "Parking Booking",
-            handler: async function (response) {
-                try {
-                    const verifyRes = await fetch("/api/verifyPayment", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({
-                            order_id: response.razorpay_order_id,
-                            payment_id: response.razorpay_payment_id,
-                            signature: response.razorpay_signature
-                        })
-                    });
-
-                    const verifyData = await verifyRes.json();
-
-                    if (verifyData.success) {
-                        try {
-                            await updateDoc(doc(db, 'bookings', bookingId), {
-                                status: "paid",
-                                paymentId: response.razorpay_payment_id,
-                                userId: currentUser.uid
-                            });
-
-                            const container = document.getElementById('payBtnContainer');
-                            if (container) {
-                                container.innerHTML = '<div class="payment-success-badge" style="width: 100%; justify-content: center; margin-top: 20px; padding: 12px;"><i class="fas fa-check-circle"></i> PAYMENT COMPLETED</div>';
-                            }
-
-                            alert("Payment Successful");
-                        } catch (error) {
-                            console.error('Payment update error:', error);
-                            alert("Payment received but failed to update booking. Contact support.");
-                        }
-                    } else {
-                        alert("Payment verification failed");
-                    }
-                } catch (error) {
-                    console.error("Verification error:", error);
-                    alert("Payment received but verification failed. Contact support.");
+                const container = document.getElementById('payBtnContainer')
+                if (container) {
+                    container.innerHTML = '<div class="payment-success-badge" style="width: 100%; justify-content: center; margin-top: 20px; padding: 12px;"><i class="fas fa-check-circle"></i> PAYMENT COMPLETED</div>'
                 }
-            },
-            modal: {
-                ondismiss: function () {
-                    if (payBtn) {
-                        payBtn.disabled = false;
-                        payBtn.classList.remove('processing');
-                        payBtn.innerHTML = '<i class="fas fa-credit-card"></i> Pay Now <span class="pay-amount">' + '\u20B9' + amount + '</span>';
-                    }
-                }
-            },
-            prefill: {
-                email: currentUser.email
-            },
-            theme: {
-                color: "#7c3aed"
+
+                alert("Payment Successful")
+            } catch (error) {
+                alert("Payment received but failed to update booking.")
             }
-        };
-
-        var rzp = new Razorpay(options);
-        rzp.open();
-    } catch (err) {
-        console.error("Order creation failed", err);
-        alert("Failed to initialize payment.");
-        if (payBtn) {
-            payBtn.disabled = false;
-            payBtn.classList.remove('processing');
-            payBtn.innerHTML = '<i class="fas fa-credit-card"></i> Pay Now <span class="pay-amount">' + '\u20B9' + amount + '</span>';
         }
     }
+
+    const rzp = new Razorpay(options)
+    rzp.open()
 }
