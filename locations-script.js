@@ -727,21 +727,39 @@ async function openPayment(booking) {
         order_id: order.id,
         name: "FASTPARK",
         handler: async function (response) {
-            try {
-                await updateDoc(doc(db, 'bookings', booking.id), {
-                    status: "paid",
-                    paymentId: response.razorpay_payment_id,
-                    userId: currentUser.uid
+            const verifyRes = await fetch("/api/verifyPayment", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_signature: response.razorpay_signature
                 })
+            })
 
-                const container = document.getElementById('payBtnContainer')
-                if (container) {
-                    container.innerHTML = '<div class="payment-success-badge" style="width: 100%; justify-content: center; margin-top: 20px; padding: 12px;"><i class="fas fa-check-circle"></i> PAYMENT COMPLETED</div>'
+            const data = await verifyRes.json()
+
+            if (data.success) {
+                try {
+                    await updateDoc(doc(db, 'bookings', booking.id), {
+                        status: "paid",
+                        paymentId: response.razorpay_payment_id,
+                        userId: currentUser.uid
+                    })
+
+                    const container = document.getElementById('payBtnContainer')
+                    if (container) {
+                        container.innerHTML = '<div class="payment-success-badge" style="width: 100%; justify-content: center; margin-top: 20px; padding: 12px;"><i class="fas fa-check-circle"></i> PAYMENT COMPLETED</div>'
+                    }
+                } catch (error) {
+                    console.error("Booking update failed:", error)
                 }
 
-                alert("Payment Successful")
-            } catch (error) {
-                alert("Payment received but failed to update booking.")
+                alert("Payment Verified ✅")
+            } else {
+                alert("Payment verification failed ❌")
             }
         }
     }
