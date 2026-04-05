@@ -422,9 +422,7 @@ async function loadHistory(force = false) {
 window.showReceipt = function (data) {
     if (!data) return;
 
-    // Try to get realistic times, fallback to payment time
     const pDateObj = data.paymentTime?.toDate ? data.paymentTime.toDate() : new Date();
-    // Default 1 hour if no exit/entry
     let eDateObj = data.entryTime?.toDate ? data.entryTime.toDate() : null;
     let exDateObj = data.exitTime?.toDate ? data.exitTime.toDate() : pDateObj;
 
@@ -444,7 +442,6 @@ window.showReceipt = function (data) {
     const entryStr = fmtTime(eDateObj);
     const exitStr = fmtTime(exDateObj);
     const durationMins = Math.max(1, Math.round((exDateObj - eDateObj) / 60000));
-    // Generate correct ID based on firebase transaction ID timestamp format fallback
     const fallbackId = eDateObj ? eDateObj.getTime().toString() : pDateObj.getTime().toString();
     const bId = data.bookingId || data.qrCode || fallbackId;
 
@@ -465,7 +462,6 @@ window.showReceipt = function (data) {
 
     modal.innerHTML = `
         <div class="card" style="width: 100%; max-width: 380px; background: white; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); position: relative; overflow: hidden; margin: 0; padding: 0;">
-            <!-- Receipt Header -->
             <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); padding: 35px 25px 25px; text-align: center; border-bottom: 2px dashed #bfdbfe;">
                 <div style="width: 50px; height: 50px; background: #3b82f6; color: white; border-radius: 12px; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: bold; margin: 0 auto 15px; box-shadow: 0 4px 15px rgba(59,130,246,0.3);">
                     P
@@ -473,12 +469,10 @@ window.showReceipt = function (data) {
                 <h2 style="margin: 0 0 5px; color: #1e3a8a; font-size: 24px; font-weight: 900; letter-spacing: -0.5px;">FastPark Receipt</h2>
                 <p style="margin: 0; color: #60a5fa; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Smart Metro Parking</p>
             </div>
-            
-            <!-- Receipt Body -->
             <div style="padding: 25px 30px 15px;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #f3f4f6;">
                     <span style="color: #6b7280; font-size: 14px;">Booking ID</span>
-                    <span style="color: #111827; font-size: 14px; font-weight: 600; font-family: 'Courier New', monospace; font-size: 12px;">${bId}</span>
+                    <span style="color: #111827; font-size: 12px; font-weight: 600; font-family: 'Courier New', monospace;">${bId}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #f3f4f6;">
                     <span style="color: #6b7280; font-size: 14px;">Date</span>
@@ -502,24 +496,21 @@ window.showReceipt = function (data) {
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px dashed #e5e7eb;">
                     <span style="color: #6b7280; font-size: 14px;">Rate</span>
-                    <span style="color: #111827; font-size: 14px; font-weight: 600;">₹80/hr</span>
+                    <span style="color: #111827; font-size: 14px; font-weight: 600;">&#8377;80/hr</span>
                 </div>
-                
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                     <span style="color: #f59e0b; font-size: 16px; font-weight: 800; letter-spacing: 1px;">TOTAL PAID</span>
-                    <span style="color: #f59e0b; font-size: 28px; font-weight: 900;">₹${data.amount || 0}</span>
+                    <span style="color: #f59e0b; font-size: 28px; font-weight: 900;">&#8377;${data.amount || 0}</span>
                 </div>
             </div>
-            
-            <!-- Receipt Footer -->
             <div style="background: #f8fafc; padding: 25px; text-align: center; border-top: 1px solid #f1f5f9;">
                 <p style="margin: 0 0 15px; color: #94a3b8; font-size: 12px; line-height: 1.6;">
                     ${fmtDate(pDateObj)}, ${fmtTime(pDateObj)} · Thank you for using FastPark!<br>
-                    <a href="https://fastpark.online" target="_blank" style="color: #3b82f6; font-weight: 700; text-decoration: none; font-size: 13px;">🌐 fastpark.online</a>
+                    <a href="https://fastpark.online" target="_blank" style="color: #3b82f6; font-weight: 700; text-decoration: none; font-size: 13px;">&#127760; fastpark.online</a>
                 </p>
                 <div style="display: flex; gap: 10px; margin-bottom: 10px;">
                     <button id="saveReceiptBtn" style="flex: 2; padding: 14px; background: #f59e0b; color: white; border: none; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; transition: transform 0.2s; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);">
-                        ↓ Save Receipt
+                        &#8595; Save Receipt
                     </button>
                     <button id="closeReceiptBtn" style="flex: 1; padding: 14px; background: white; color: #1e293b; border: 1px solid #cbd5e1; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; transition: background 0.2s;">
                         Close
@@ -556,8 +547,6 @@ window.showReceipt = function (data) {
 };
 
 // ===== Update Profile UI =====
-
-// ===== Update Profile UI =====
 function updateProfileUI() {
     if (!currentUser) return;
 
@@ -589,7 +578,7 @@ async function sendReceiptToEmail(receiptData, modal) {
     const emailBtn = modal ? modal.querySelector('#emailReceiptBtn') : null;
     if (emailBtn) {
         emailBtn.disabled = true;
-        emailBtn.innerHTML = '<span style="margin-right: 6px;">⏳</span> Sending...';
+        emailBtn.innerHTML = '<span style="margin-right: 6px;">&#9203;</span> Sending...';
         emailBtn.style.opacity = '0.7';
     }
 
@@ -655,11 +644,11 @@ async function sendReceiptToEmail(receiptData, modal) {
 
         if (result.success) {
             if (emailBtn) {
-                emailBtn.innerHTML = '<span style="margin-right: 6px;">✅</span> Email Sent!';
+                emailBtn.innerHTML = '<span style="margin-right: 6px;">&#9989;</span> Email Sent!';
                 emailBtn.style.background = 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)';
                 emailBtn.style.opacity = '1';
                 setTimeout(() => {
-                    emailBtn.innerHTML = '<span style="margin-right: 6px;">📧</span> Email Receipt';
+                    emailBtn.innerHTML = '<span style="margin-right: 6px;">&#128231;</span> Email Receipt';
                     emailBtn.style.background = 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)';
                     emailBtn.disabled = false;
                 }, 3000);
@@ -671,12 +660,12 @@ async function sendReceiptToEmail(receiptData, modal) {
     } catch (error) {
         console.error('Email send error:', error);
         if (emailBtn) {
-            emailBtn.innerHTML = '<span style="margin-right: 6px;">❌</span> Failed - Retry';
+            emailBtn.innerHTML = '<span style="margin-right: 6px;">&#10060;</span> Failed - Retry';
             emailBtn.style.background = '#ef4444';
             emailBtn.style.opacity = '1';
             emailBtn.disabled = false;
             setTimeout(() => {
-                emailBtn.innerHTML = '<span style="margin-right: 6px;">📧</span> Email Receipt';
+                emailBtn.innerHTML = '<span style="margin-right: 6px;">&#128231;</span> Email Receipt';
                 emailBtn.style.background = 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)';
             }, 3000);
         }
@@ -696,23 +685,13 @@ async function checkPaymentEnabled(bookingId) {
         if (!container) return;
 
         if (booking.status === 'paid') {
-            container.innerHTML = \`
-                <div class="payment-success-badge" style="width: 100%; justify-content: center; margin-top: 20px; padding: 12px;">
-                    <i class="fas fa-check-circle"></i> PAYMENT COMPLETED
-                </div>
-            \`;
+            container.innerHTML = '<div class="payment-success-badge" style="width: 100%; justify-content: center; margin-top: 20px; padding: 12px;"><i class="fas fa-check-circle"></i> PAYMENT COMPLETED</div>';
             return;
         }
 
         if (booking.paymentEnabled === true && currentUser) {
             const amount = booking.amount || booking.price || 80;
-            container.innerHTML = \`
-                <button class="pay-now-btn" id="payNowBtn">
-                    <i class="fas fa-credit-card"></i>
-                    Pay Now
-                    <span class="pay-amount">₹\${amount}</span>
-                </button>
-            \`;
+            container.innerHTML = '<button class="pay-now-btn" id="payNowBtn"><i class="fas fa-credit-card"></i> Pay Now <span class="pay-amount">' + '\u20B9' + amount + '</span></button>';
 
             document.getElementById('payNowBtn').addEventListener('click', function (e) {
                 e.preventDefault();
@@ -778,11 +757,7 @@ async function handleRazorpayPayment(bookingId, amount) {
 
                             const container = document.getElementById('payBtnContainer');
                             if (container) {
-                                container.innerHTML = \`
-                                    <div class="payment-success-badge" style="width: 100%; justify-content: center; margin-top: 20px; padding: 12px;">
-                                        <i class="fas fa-check-circle"></i> PAYMENT COMPLETED
-                                    </div>
-                                \`;
+                                container.innerHTML = '<div class="payment-success-badge" style="width: 100%; justify-content: center; margin-top: 20px; padding: 12px;"><i class="fas fa-check-circle"></i> PAYMENT COMPLETED</div>';
                             }
 
                             alert("Payment Successful");
@@ -803,7 +778,7 @@ async function handleRazorpayPayment(bookingId, amount) {
                     if (payBtn) {
                         payBtn.disabled = false;
                         payBtn.classList.remove('processing');
-                        payBtn.innerHTML = \`<i class="fas fa-credit-card"></i> Pay Now <span class="pay-amount">₹\${amount}</span>\`;
+                        payBtn.innerHTML = '<i class="fas fa-credit-card"></i> Pay Now <span class="pay-amount">' + '\u20B9' + amount + '</span>';
                     }
                 }
             },
@@ -823,7 +798,7 @@ async function handleRazorpayPayment(bookingId, amount) {
         if (payBtn) {
             payBtn.disabled = false;
             payBtn.classList.remove('processing');
-            payBtn.innerHTML = \`<i class="fas fa-credit-card"></i> Pay Now <span class="pay-amount">₹\${amount}</span>\`;
+            payBtn.innerHTML = '<i class="fas fa-credit-card"></i> Pay Now <span class="pay-amount">' + '\u20B9' + amount + '</span>';
         }
     }
 }
