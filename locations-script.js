@@ -10,6 +10,9 @@ import {
     query,
     where,
     getDocs,
+    doc,
+    getDoc,
+    updateDoc,
     limit
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
@@ -272,6 +275,8 @@ async function loadMyActiveBooking() {
                     <button onclick="window.selectLocation('${activeBooking.locationId}', '${locName}')" class="btn-primary-action" style="width: 100%; margin-top: 20px;">
                         <i class="fas fa-eye"></i> View Slot Dashboard
                     </button>
+
+                    <div id="payBtnContainer"></div>
                 </div>
             `;
 
@@ -291,9 +296,12 @@ async function loadMyActiveBooking() {
                 }
             }, 100);
 
-            // Start timer if pending
             if (activeBooking.status === 'pending' && activeBooking.bookingTime) {
                 setTimeout(() => startBookingTimer(activeBooking.bookingTime), 150);
+            }
+
+            if (activeBooking.bookingId) {
+                checkPaymentEnabled(activeBooking.bookingId);
             }
         } else {
             container.innerHTML = `
@@ -679,4 +687,102 @@ async function sendReceiptToEmail(receiptData, modal) {
         }
         alert('Failed to send receipt email. Please try again later.');
     }
+}
+
+async function checkPaymentEnabled(bookingId) {
+    try {
+        const bookingRef = doc(db, 'bookings', bookingId);
+        const bookingSnap = await getDoc(bookingRef);
+
+        if (!bookingSnap.exists()) return;
+
+        const booking = bookingSnap.data();
+        const container = document.getElementById('payBtnContainer');
+        if (!container) return;
+
+        if (booking.status === 'paid') {
+            container.innerHTML = `
+                <div class="payment-success-badge" style="width: 100%; justify-content: center; margin-top: 20px; padding: 12px;">
+                    <i class="fas fa-check-circle"></i> PAYMENT COMPLETED
+                </div>
+            `;
+            return;
+        }
+
+        if (booking.paymentEnabled === true && currentUser) {
+            const amount = booking.amount || booking.price || 80;
+            container.innerHTML = `
+                <button class="pay-now-btn" id="payNowBtn">
+                    <i class="fas fa-credit-card"></i>
+                    Pay Now
+                    <span class="pay-amount">₹${amount}</span>
+                </button>
+            `;
+
+            document.getElementById('payNowBtn').addEventListener('click', function (e) {
+                e.preventDefault();
+                handleRazorpayPayment(bookingId, amount);
+            });
+        }
+    } catch (error) {
+        console.error('Error checking payment:', error);
+    }
+}
+
+function handleRazorpayPayment(bookingId, amount) {
+    const payBtn = document.getElementById('payNowBtn');
+    if (payBtn) {
+        payBtn.disabled = true;
+        payBtn.classList.add('processing');
+        payBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    }
+
+    var options = {
+        key: "rzp_test_SZquwUDpz1IWQq",
+        amount: amount * 100,
+        currency: "INR",
+        name: "Smart Parking",
+        description: "Parking Booking",
+        handler: async function (response) {
+            try {
+                await updateDoc(doc(db, 'bookings', bookingId), {
+                    status: "paid",
+                    paymentId: response.razorpay_payment_id,
+                    userId: currentUser.uid
+                });
+
+                const container = document.getElementById('payBtnContainer');
+                if (container) {
+                    container.innerHTML = `
+                        <div class="payment-success-badge" style="width: 100%; justify-content: center; margin-top: 20px; padding: 12px;">
+                            <i class="fas fa-check-circle"></i> PAYMENT COMPLETED
+                        </div>
+                    `;
+                }
+
+                alert("Payment Successful");
+            } catch (error) {
+                console.error('Payment update error:', error);
+                alert("Payment received but failed to update booking. Contact support.");
+            }
+        },
+        modal: {
+            ondismiss: function () {
+                if (payBtn) {
+                    payBtn.disabled = false;
+                    payBtn.classList.remove('processing');
+                    payBtn.innerHTML = `<i class="fas fa-credit-card"></i> Pay Now <span class="pay-amount">₹${amount}</span>`;
+                }
+            }
+        },
+        prefill: {
+            email: currentUser.email
+        },
+        theme: {
+            color: "#7c3aed"
+        }
+    };
+
+    var rzp = new Razorpay(options);
+    rzp.open();
 }

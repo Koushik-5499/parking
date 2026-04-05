@@ -513,10 +513,8 @@ setInterval(() => {
 }, 1000);
 
 
-// Pay for slot directly (when payment_pending)
 window.payForSlot = async function(slotId) {
     try {
-        // Find the payment request for this slot
         const paymentRequestsRef = collection(db, 'payment_requests');
         const q = query(paymentRequestsRef, 
             where('slotId', '==', slotId),
@@ -533,148 +531,56 @@ window.payForSlot = async function(slotId) {
         
         const requestDoc = querySnapshot.docs[0];
         const requestData = requestDoc.data();
-        const amount = requestData.amount;
+        const amount = requestData.amount || 80;
+        const bookingId = requestData.bookingId || slotId;
         
-        // UPI Payment Details
-        const upiID = "7200746814@pthdfc"; // ⚠️ IMPORTANT: Verify this UPI ID is active and can receive payments
-        const payeeName = "Smart Metro Parking";
-        const transactionNote = `Parking-Slot${requestData.slotNumber}-${requestData.locationId}`;
-        
-        // Create UPI payment URL (Standard UPI deep link format)
-        const upiURL = `upi://pay?pa=${upiID}&pn=${encodeURIComponent(payeeName)}&am=${amount}&cu=INR&tn=${encodeURIComponent(transactionNote)}`;
-        
-        // Show confirmation dialog
-        if (!confirm(`You will be redirected to your UPI app to pay ₹${amount}.\n\nAfter completing payment, please return here and click "Payment Done" to confirm.`)) {
-            return;
-        }
-        
-        // Open UPI payment app
-        window.location.href = upiURL;
-        
-        // Show payment confirmation dialog after a delay (user will return after payment)
-        setTimeout(() => {
-            showPaymentConfirmation(requestDoc.id, requestData);
-        }, 3000);
-        
+        openPayment(bookingId, amount, requestDoc.id, requestData);
     } catch (error) {
-        console.error('Payment error:', error);
         alert('Payment failed: ' + error.message);
     }
 };
 
-// Show payment confirmation dialog
-function showPaymentConfirmation(requestId, requestData) {
-    const modal = document.createElement('div');
-    modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.8);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 10000;
-    `;
-    
-    modal.innerHTML = `
-        <div style="background: white; padding: 30px; border-radius: 12px; max-width: 400px; width: 90%; text-align: center;">
-            <div style="margin-bottom: 20px;">
-                <i class="fas fa-credit-card" style="font-size: 48px; color: #2563eb;"></i>
-            </div>
-            <h2 style="color: #374151; margin-bottom: 15px;">Payment Status</h2>
-            <p style="color: #6b7280; margin-bottom: 20px;">Have you completed the payment of ₹${requestData.amount}?</p>
-            <div style="display: flex; gap: 10px;">
-                <button id="paymentDoneBtn" style="flex: 1; padding: 14px; background: #38bdf8; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px;">
-                    <i class="fas fa-check"></i> Payment Done
-                </button>
-                <button id="paymentCancelBtn" style="flex: 1; padding: 14px; background: #6b7280; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px;">
-                    <i class="fas fa-times"></i> Cancel
-                </button>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    // Handle Payment Done button
-    document.getElementById('paymentDoneBtn').addEventListener('click', async () => {
-        try {
-            // Save payment transaction
-            await addDoc(collection(db, 'payment_transactions'), {
-                locationId: requestData.locationId,
-                slotId: requestData.slotId,
-                slotNumber: requestData.slotNumber || '',
-                bookedBy: requestData.bookedBy || 'N/A',
-                userEmail: requestData.userEmail || 'N/A',
-                phone: requestData.phone || 'N/A',
-                vehicleNumber: requestData.vehicleNumber || 'N/A',
-                amount: requestData.amount,
-                bookingId: requestData.bookingId || '',
-                paymentMethod: 'online',
-                paymentTime: serverTimestamp(),
-                exitTime: requestData.exitTime
-            });
+function openPayment(bookingId, amount, requestId, requestData) {
+    var options = {
+        key: "rzp_test_SZquwUDpz1IWQq",
+        amount: amount * 100,
+        currency: "INR",
+        name: "Smart Parking",
+        description: "Parking Booking",
+        handler: async function (response) {
+            try {
+                await updateDoc(doc(db, "bookings", bookingId), {
+                    status: "paid",
+                    paymentId: response.razorpay_payment_id
+                });
+            } catch(e) {}
             
-            // Update request status to completed
-            await updateDoc(doc(db, 'payment_requests', requestId), {
-                status: 'completed',
-                paidTime: serverTimestamp()
-            });
+            try {
+                await updateDoc(doc(db, 'payment_requests', requestId), {
+                    status: 'completed',
+                    paidTime: serverTimestamp()
+                });
+                await addDoc(collection(db, 'payment_transactions'), {
+                    locationId: requestData.locationId,
+                    slotId: requestData.slotId,
+                    slotNumber: requestData.slotNumber || '',
+                    bookedBy: requestData.bookedBy || 'N/A',
+                    userEmail: requestData.userEmail || 'N/A',
+                    phone: requestData.phone || 'N/A',
+                    vehicleNumber: requestData.vehicleNumber || 'N/A',
+                    amount: requestData.amount,
+                    bookingId: requestData.bookingId || '',
+                    paymentMethod: 'online',
+                    paymentTime: serverTimestamp(),
+                    exitTime: requestData.exitTime
+                });
+            } catch(e) {}
             
-            modal.remove();
-            alert('✅ Payment confirmed! Thank you. Sending receipt to your email...');
-
-            // Send email receipt automatically after payment
-            const gatesMap = {
-                'rathinam_main_gate': 'Rathinam Main Gate',
-                'rathinam_gate1': 'Rathinam Gate 1',
-                'rathinam_gate3': 'Rathinam Gate 3'
-            };
-            const locName = gatesMap[requestData.locationId] || requestData.locationId || 'N/A';
-            
-            const entryTime = requestData.entryTime?.toDate ? requestData.entryTime.toDate() : null;
-            const exitTime = requestData.exitTime instanceof Date ? requestData.exitTime : 
-                            (requestData.exitTime?.toDate ? requestData.exitTime.toDate() : new Date());
-            
-            const fmtTime = (d) => d ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'N/A';
-            const fmtDateStr = (d) => {
-                if (!d) return 'N/A';
-                const dd = String(d.getDate()).padStart(2, '0');
-                const mm = String(d.getMonth() + 1).padStart(2, '0');
-                const yy = String(d.getFullYear()).slice(-2);
-                return `${dd}/${mm}/${yy}`;
-            };
-
-            let durationMins = 'N/A';
-            if (entryTime && exitTime) {
-                durationMins = Math.max(1, Math.round((exitTime - entryTime) / 60000)) + ' min';
-            }
-
-            sendReceiptEmail({
-                to: currentUser.email,
-                bookingId: requestData.bookingId || '',
-                date: fmtDateStr(entryTime || exitTime),
-                location: `${locName}, Slot ${requestData.slotNumber || 'N/A'}`,
-                entry: fmtTime(entryTime),
-                exit: fmtTime(exitTime),
-                duration: durationMins,
-                rate: '₹80/hr',
-                amount: requestData.amount || 0,
-                qrCode: requestData.bookingId || ''
-            });
-
-        } catch (error) {
-            console.error('Error confirming payment:', error);
-            alert('Failed to confirm payment: ' + error.message);
+            alert("Payment Successful");
         }
-    });
-    
-    // Handle Cancel button
-    document.getElementById('paymentCancelBtn').addEventListener('click', () => {
-        modal.remove();
-    });
+    };
+    var rzp = new Razorpay(options);
+    rzp.open();
 }
 
 // ===== Send Receipt Email =====
