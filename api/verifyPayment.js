@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const body = JSON.parse(req.body)
+    const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body
 
     const {
       razorpay_order_id,
@@ -24,9 +24,10 @@ export default async function handler(req, res) {
     if (expectedSign === razorpay_signature) {
       return res.status(200).json({ success: true })
     } else {
-      return res.status(400).json({ success: false })
+      return res.status(400).json({ success: false, error: "Invalid signature" })
     }
   } catch (err) {
-    return res.status(500).json({ error: "Verification failed" })
+    console.error("Verification error:", err)
+    return res.status(500).json({ success: false, error: "Verification failed" })
   }
 }

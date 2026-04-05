@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const body = JSON.parse(req.body)
+    const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body
 
     const razorpay = new Razorpay({
       key_id: process.env.RAZORPAY_KEY,
