@@ -556,12 +556,13 @@ window.showReceipt = function (data) {
 };
 
 // ===== Update Profile UI =====
+
+// ===== Update Profile UI =====
 function updateProfileUI() {
     if (!currentUser) return;
 
     const email = currentUser.email;
     const namePart = email.split('@')[0];
-    // Capitalize each word
     const displayName = namePart.replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     const initials = displayName.substring(0, 2).toUpperCase();
 
@@ -569,7 +570,6 @@ function updateProfileUI() {
     document.getElementById('profileEmail').textContent = email;
     document.getElementById('profileAvatar').textContent = initials;
 
-    // Set member since date
     if (currentUser.metadata && currentUser.metadata.creationTime) {
         const creationDate = new Date(currentUser.metadata.creationTime);
         const dd = String(creationDate.getDate()).padStart(2, '0');
@@ -594,10 +594,8 @@ async function sendReceiptToEmail(receiptData, modal) {
     }
 
     try {
-        // Try to extract QR code from the active booking section (canvas in bookingQrCode div)
         let qrImageBase64 = null;
 
-        // Method 1: Check the My Booking tab's QR code container
         const bookingQrContainer = document.getElementById('bookingQrCode');
         if (bookingQrContainer) {
             const canvas = bookingQrContainer.querySelector('canvas');
@@ -611,7 +609,6 @@ async function sendReceiptToEmail(receiptData, modal) {
             }
         }
 
-        // Method 2: If no QR found in My Booking, generate one temporarily using the bookingId
         if (!qrImageBase64 && receiptData.qrCode && typeof QRCode !== 'undefined') {
             const tempDiv = document.createElement('div');
             tempDiv.style.cssText = 'position: absolute; left: -9999px; top: -9999px;';
@@ -626,7 +623,6 @@ async function sendReceiptToEmail(receiptData, modal) {
                 correctLevel: QRCode.CorrectLevel.H
             });
 
-            // Wait for QR to render
             await new Promise(resolve => setTimeout(resolve, 300));
 
             const tempCanvas = tempDiv.querySelector('canvas');
@@ -636,7 +632,6 @@ async function sendReceiptToEmail(receiptData, modal) {
             document.body.removeChild(tempDiv);
         }
 
-        // Send to backend
         const response = await fetch('/api/send-email', {
             method: 'POST',
             headers: {
@@ -701,23 +696,23 @@ async function checkPaymentEnabled(bookingId) {
         if (!container) return;
 
         if (booking.status === 'paid') {
-            container.innerHTML = `
+            container.innerHTML = \`
                 <div class="payment-success-badge" style="width: 100%; justify-content: center; margin-top: 20px; padding: 12px;">
                     <i class="fas fa-check-circle"></i> PAYMENT COMPLETED
                 </div>
-            `;
+            \`;
             return;
         }
 
         if (booking.paymentEnabled === true && currentUser) {
             const amount = booking.amount || booking.price || 80;
-            container.innerHTML = `
+            container.innerHTML = \`
                 <button class="pay-now-btn" id="payNowBtn">
                     <i class="fas fa-credit-card"></i>
                     Pay Now
-                    <span class="pay-amount">₹${amount}</span>
+                    <span class="pay-amount">₹\${amount}</span>
                 </button>
-            `;
+            \`;
 
             document.getElementById('payNowBtn').addEventListener('click', function (e) {
                 e.preventDefault();
@@ -729,7 +724,7 @@ async function checkPaymentEnabled(bookingId) {
     }
 }
 
-function handleRazorpayPayment(bookingId, amount) {
+async function handleRazorpayPayment(bookingId, amount) {
     const payBtn = document.getElementById('payNowBtn');
     if (payBtn) {
         payBtn.disabled = true;
@@ -737,52 +732,98 @@ function handleRazorpayPayment(bookingId, amount) {
         payBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
     }
 
-    var options = {
-        key: "rzp_test_SZquwUDpz1IWQq",
-        amount: amount * 100,
-        currency: "INR",
-        name: "Smart Parking",
-        description: "Parking Booking",
-        handler: async function (response) {
-            try {
-                await updateDoc(doc(db, 'bookings', bookingId), {
-                    status: "paid",
-                    paymentId: response.razorpay_payment_id,
-                    userId: currentUser.uid
-                });
+    try {
+        const orderRes = await fetch("/api/createOrder", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                amount: amount * 100
+            })
+        });
 
-                const container = document.getElementById('payBtnContainer');
-                if (container) {
-                    container.innerHTML = `
-                        <div class="payment-success-badge" style="width: 100%; justify-content: center; margin-top: 20px; padding: 12px;">
-                            <i class="fas fa-check-circle"></i> PAYMENT COMPLETED
-                        </div>
-                    `;
-                }
+        const order = await orderRes.json();
 
-                alert("Payment Successful");
-            } catch (error) {
-                console.error('Payment update error:', error);
-                alert("Payment received but failed to update booking. Contact support.");
-            }
-        },
-        modal: {
-            ondismiss: function () {
-                if (payBtn) {
-                    payBtn.disabled = false;
-                    payBtn.classList.remove('processing');
-                    payBtn.innerHTML = `<i class="fas fa-credit-card"></i> Pay Now <span class="pay-amount">₹${amount}</span>`;
+        var options = {
+            key: "rzp_test_SZquwUDpz1IWQq",
+            amount: amount * 100,
+            currency: "INR",
+            order_id: order.id,
+            name: "Smart Parking",
+            description: "Parking Booking",
+            handler: async function (response) {
+                try {
+                    const verifyRes = await fetch("/api/verifyPayment", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            order_id: response.razorpay_order_id,
+                            payment_id: response.razorpay_payment_id,
+                            signature: response.razorpay_signature
+                        })
+                    });
+
+                    const verifyData = await verifyRes.json();
+
+                    if (verifyData.success) {
+                        try {
+                            await updateDoc(doc(db, 'bookings', bookingId), {
+                                status: "paid",
+                                paymentId: response.razorpay_payment_id,
+                                userId: currentUser.uid
+                            });
+
+                            const container = document.getElementById('payBtnContainer');
+                            if (container) {
+                                container.innerHTML = \`
+                                    <div class="payment-success-badge" style="width: 100%; justify-content: center; margin-top: 20px; padding: 12px;">
+                                        <i class="fas fa-check-circle"></i> PAYMENT COMPLETED
+                                    </div>
+                                \`;
+                            }
+
+                            alert("Payment Successful");
+                        } catch (error) {
+                            console.error('Payment update error:', error);
+                            alert("Payment received but failed to update booking. Contact support.");
+                        }
+                    } else {
+                        alert("Payment verification failed");
+                    }
+                } catch (error) {
+                    console.error("Verification error:", error);
+                    alert("Payment received but verification failed. Contact support.");
                 }
+            },
+            modal: {
+                ondismiss: function () {
+                    if (payBtn) {
+                        payBtn.disabled = false;
+                        payBtn.classList.remove('processing');
+                        payBtn.innerHTML = \`<i class="fas fa-credit-card"></i> Pay Now <span class="pay-amount">₹\${amount}</span>\`;
+                    }
+                }
+            },
+            prefill: {
+                email: currentUser.email
+            },
+            theme: {
+                color: "#7c3aed"
             }
-        },
-        prefill: {
-            email: currentUser.email
-        },
-        theme: {
-            color: "#7c3aed"
+        };
+
+        var rzp = new Razorpay(options);
+        rzp.open();
+    } catch (err) {
+        console.error("Order creation failed", err);
+        alert("Failed to initialize payment.");
+        if (payBtn) {
+            payBtn.disabled = false;
+            payBtn.classList.remove('processing');
+            payBtn.innerHTML = \`<i class="fas fa-credit-card"></i> Pay Now <span class="pay-amount">₹\${amount}</span>\`;
         }
-    };
-
-    var rzp = new Razorpay(options);
-    rzp.open();
+    }
 }

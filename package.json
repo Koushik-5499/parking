@@ -11,6 +11,7 @@
   "type": "module",
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
+    "razorpay": "^2.9.6",
     "resend": "^3.0.0"
   }
 }

@@ -540,47 +540,88 @@ window.payForSlot = async function(slotId) {
     }
 };
 
-function openPayment(bookingId, amount, requestId, requestData) {
-    var options = {
-        key: "rzp_test_SZquwUDpz1IWQq",
-        amount: amount * 100,
-        currency: "INR",
-        name: "Smart Parking",
-        description: "Parking Booking",
-        handler: async function (response) {
-            try {
-                await updateDoc(doc(db, "bookings", bookingId), {
-                    status: "paid",
-                    paymentId: response.razorpay_payment_id
-                });
-            } catch(e) {}
-            
-            try {
-                await updateDoc(doc(db, 'payment_requests', requestId), {
-                    status: 'completed',
-                    paidTime: serverTimestamp()
-                });
-                await addDoc(collection(db, 'payment_transactions'), {
-                    locationId: requestData.locationId,
-                    slotId: requestData.slotId,
-                    slotNumber: requestData.slotNumber || '',
-                    bookedBy: requestData.bookedBy || 'N/A',
-                    userEmail: requestData.userEmail || 'N/A',
-                    phone: requestData.phone || 'N/A',
-                    vehicleNumber: requestData.vehicleNumber || 'N/A',
-                    amount: requestData.amount,
-                    bookingId: requestData.bookingId || '',
-                    paymentMethod: 'online',
-                    paymentTime: serverTimestamp(),
-                    exitTime: requestData.exitTime
-                });
-            } catch(e) {}
-            
-            alert("Payment Successful");
-        }
-    };
-    var rzp = new Razorpay(options);
-    rzp.open();
+async function openPayment(bookingId, amount, requestId, requestData) {
+    try {
+        const orderRes = await fetch("/api/createOrder", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                amount: amount * 100
+            })
+        });
+        
+        const order = await orderRes.json();
+
+        var options = {
+            key: "rzp_test_SZquwUDpz1IWQq",
+            amount: amount * 100,
+            currency: "INR",
+            order_id: order.id,
+            name: "Smart Parking",
+            description: "Parking Booking",
+            handler: async function (response) {
+                try {
+                    const verifyRes = await fetch("/api/verifyPayment", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            order_id: response.razorpay_order_id,
+                            payment_id: response.razorpay_payment_id,
+                            signature: response.razorpay_signature
+                        })
+                    });
+
+                    const verifyData = await verifyRes.json();
+
+                    if (verifyData.success) {
+                        try {
+                            await updateDoc(doc(db, "bookings", bookingId), {
+                                status: "paid",
+                                paymentId: response.razorpay_payment_id
+                            });
+                        } catch(e) {}
+                        
+                        try {
+                            await updateDoc(doc(db, 'payment_requests', requestId), {
+                                status: 'completed',
+                                paidTime: serverTimestamp()
+                            });
+                            await addDoc(collection(db, 'payment_transactions'), {
+                                locationId: requestData.locationId,
+                                slotId: requestData.slotId,
+                                slotNumber: requestData.slotNumber || '',
+                                bookedBy: requestData.bookedBy || 'N/A',
+                                userEmail: requestData.userEmail || 'N/A',
+                                phone: requestData.phone || 'N/A',
+                                vehicleNumber: requestData.vehicleNumber || 'N/A',
+                                amount: requestData.amount,
+                                bookingId: requestData.bookingId || '',
+                                paymentMethod: 'online',
+                                paymentTime: serverTimestamp(),
+                                exitTime: requestData.exitTime
+                            });
+                        } catch(e) {}
+                        
+                        alert("Payment Successful");
+                    } else {
+                        alert("Payment verification failed");
+                    }
+                } catch(error) {
+                    console.error("Verification error:", error);
+                    alert("Payment received but verification failed. Contact support.");
+                }
+            }
+        };
+        var rzp = new Razorpay(options);
+        rzp.open();
+    } catch(err) {
+        console.error("Order creation failed", err);
+        alert("Failed to initialize payment.");
+    }
 }
 
 // ===== Send Receipt Email =====
