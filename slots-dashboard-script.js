@@ -569,9 +569,9 @@ async function openPayment(bookingId, amount, requestId, requestData) {
                             "Content-Type": "application/json"
                         },
                         body: JSON.stringify({
-                            order_id: response.razorpay_order_id,
-                            payment_id: response.razorpay_payment_id,
-                            signature: response.razorpay_signature
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature
                         })
                     });
 
