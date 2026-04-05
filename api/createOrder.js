@@ -1,15 +1,24 @@
-const Razorpay = require("razorpay")
+import Razorpay from "razorpay"
 
 export default async function handler(req, res) {
-    const razorpay = new Razorpay({
-        key_id: process.env.RAZORPAY_KEY,
-        key_secret: process.env.RAZORPAY_SECRET
-    })
+    if (req.method !== "POST") {
+        return res.status(405).json({ error: "Method not allowed" })
+    }
 
-    const order = await razorpay.orders.create({
-        amount: req.body.amount,
-        currency: "INR"
-    })
+    try {
+        const razorpay = new Razorpay({
+            key_id: process.env.RAZORPAY_KEY,
+            key_secret: process.env.RAZORPAY_SECRET
+        })
 
-    res.status(200).json(order)
+        const order = await razorpay.orders.create({
+            amount: req.body.amount,
+            currency: "INR"
+        })
+
+        res.status(200).json(order)
+    } catch (err) {
+        console.error("Razorpay order error:", err)
+        res.status(500).json({ error: "Failed to create order" })
+    }
 }
