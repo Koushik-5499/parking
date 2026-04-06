@@ -1,3 +1,4 @@
+in
 <!DOCTYPE html>
 <html lang="en">
 
@@ -19,35 +20,55 @@
             margin-bottom: 18px;
             animation: alertSlideIn 0.35s ease;
         }
-        .auth-alert i { font-size: 18px; flex-shrink: 0; }
+
+        .auth-alert i {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
         .auth-alert-success {
             background: linear-gradient(135deg, #d1fae5, #a7f3d0);
             color: #065f46;
             border: 1px solid #6ee7b7;
         }
+
         .auth-alert-error {
             background: linear-gradient(135deg, #fee2e2, #fecaca);
             color: #991b1b;
             border: 1px solid #fca5a5;
         }
+
         @keyframes alertSlideIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
     <style>
+        html, body {
+            overflow-x: hidden;
+            width: 100%;
+        }
+
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%) !important;
             color: #1e293b;
             font-family: 'Inter', 'Segoe UI', sans-serif;
             margin: 0;
-            overflow: hidden;
+            min-height: 100vh;
         }
 
         /* Ambient Glow Behind Card */
         .ambient-glow {
             position: absolute;
-            width: 500px;
+            width: 100vw;
+            max-width: 500px;
             height: 500px;
             background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, transparent 70%);
             top: 50%;
@@ -63,8 +84,17 @@
             box-shadow: 0 30px 60px -15px rgba(2, 132, 199, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.5) !important;
             position: relative;
             z-index: 1;
-            padding: 30px 40px !important;
+            padding: 30px 40px;
             border-radius: 28px !important;
+        }
+
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 30px 25px !important;
+            }
+            .login-form .input-group input {
+                padding: 13px 40px !important;
+            }
         }
 
         /* Custom Logo CSS */
@@ -91,7 +121,7 @@
             margin-bottom: 12px;
             position: relative;
             overflow: hidden;
-            border: 2px solid rgba(255,255,255,0.9);
+            border: 2px solid rgba(255, 255, 255, 0.9);
             background: white;
             transition: box-shadow 0.4s ease, transform 0.4s ease;
         }
@@ -104,16 +134,27 @@
         .logo-icon::after {
             content: '';
             position: absolute;
-            top: 0; left: -100%; width: 50%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
             animation: shine 4s infinite;
             z-index: 2;
         }
 
         @keyframes shine {
-            0% { left: -100%; }
-            20% { left: 200%; }
-            100% { left: 200%; }
+            0% {
+                left: -100%;
+            }
+
+            20% {
+                left: 200%;
+            }
+
+            100% {
+                left: 200%;
+            }
         }
 
         .fastpark-logo h1 {
@@ -124,13 +165,13 @@
             display: flex;
             gap: 2px;
             text-transform: uppercase;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.05));
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.05));
         }
 
         .fastpark-logo h1 .fast {
             color: #0f172a;
         }
-        
+
         .fastpark-logo h1 .park {
             background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 50%, #4f46e5 100%);
             -webkit-background-clip: text;
@@ -171,7 +212,7 @@
             color: #94a3b8 !important;
         }
 
-        .login-form .input-group .icon, 
+        .login-form .input-group .icon,
         .login-form .input-group .toggle-password {
             color: #94a3b8 !important;
         }
@@ -211,7 +252,7 @@
         .google-btn:hover {
             background: #f8fafc !important;
             border-color: #cbd5e1 !important;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
         }
 
         .divider {
@@ -223,29 +264,55 @@
             margin: 15px 0;
         }
 
-        .divider::before, .divider::after {
+        .divider::before,
+        .divider::after {
             content: '';
             flex: 1;
             border-bottom: 1px solid #e2e8f0 !important;
         }
-        
-        .divider span { padding: 0 15px; }
 
-        .forgot-password { color: #8b5cf6 !important; font-weight: 600; }
-        .forgot-password:hover { color: #7c3aed !important; }
-        
-        .signup-text { color: #64748b !important; font-weight: 500; text-align: center; margin-top: 15px;}
-        .signup-text a { color: #8b5cf6 !important; text-decoration: none; font-weight: 700; }
-        .signup-text a:hover { color: #7c3aed !important; }
+        .divider span {
+            padding: 0 15px;
+        }
+
+        .forgot-password {
+            color: #8b5cf6 !important;
+            font-weight: 600;
+        }
+
+        .forgot-password:hover {
+            color: #7c3aed !important;
+        }
+
+        .signup-text {
+            color: #64748b !important;
+            font-weight: 500;
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .signup-text a {
+            color: #8b5cf6 !important;
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .signup-text a:hover {
+            color: #7c3aed !important;
+        }
 
         /* Shapes behind */
         .bg-shapes {
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             z-index: -1;
             overflow: hidden;
             pointer-events: none;
         }
+
         .b-shape {
             position: absolute;
             border-radius: 50%;
@@ -253,14 +320,35 @@
             opacity: 0.6;
             animation: pulse 8s infinite alternate;
         }
-        .b-shape-1 { width: 500px; height: 500px; background: #38bdf8; top: -10%; left: -10%; }
-        .b-shape-2 { width: 600px; height: 600px; background: #d8b4fe; bottom: -20%; right: -10%; animation-delay: -4s;}
-        
-        @keyframes pulse {
-            0% { transform: scale(1) translate(0, 0); opacity: 0.4; }
-            100% { transform: scale(1.1) translate(30px, 30px); opacity: 0.7; }
+
+        .b-shape-1 {
+            width: 500px;
+            height: 500px;
+            background: #38bdf8;
+            top: -10%;
+            left: -10%;
         }
-        
+
+        .b-shape-2 {
+            width: 600px;
+            height: 600px;
+            background: #d8b4fe;
+            bottom: -20%;
+            right: -10%;
+            animation-delay: -4s;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1) translate(0, 0);
+                opacity: 0.4;
+            }
+
+            100% {
+                transform: scale(1.1) translate(30px, 30px);
+                opacity: 0.7;
+            }
+        }
     </style>
 </head>
 
@@ -275,7 +363,8 @@
         <div class="login-card">
             <div class="fastpark-logo">
                 <div class="logo-icon" style="background: none; border: none; padding: 0;">
-                    <img src="logo.jpg" alt="FastPark Logo" style="width: 100%; height: 100%; object-fit: cover; z-index: 1; border-radius: 20px;">
+                    <img src="logo.jpg" alt="FastPark Logo"
+                        style="width: 100%; height: 100%; object-fit: cover; z-index: 1; border-radius: 20px;">
                 </div>
                 <h1><span class="fast">FAST</span><span class="park">PARK</span></h1>
                 <p>Create Account</p>

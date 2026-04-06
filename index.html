@@ -82,18 +82,24 @@
             font-size: 15px;
         }
 
+        html, body {
+            overflow-x: hidden;
+            width: 100%;
+        }
+
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%) !important;
             color: #1e293b;
             font-family: 'Inter', 'Segoe UI', sans-serif;
             margin: 0;
-            overflow: hidden;
+            min-height: 100vh;
         }
 
         /* Ambient Glow Behind Card */
         .ambient-glow {
             position: absolute;
-            width: 500px;
+            width: 100vw;
+            max-width: 500px;
             height: 500px;
             background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, transparent 70%);
             top: 50%;
@@ -109,8 +115,17 @@
             box-shadow: 0 30px 60px -15px rgba(2, 132, 199, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.5) !important;
             position: relative;
             z-index: 1;
-            padding: 30px 40px !important;
+            padding: 30px 40px;
             border-radius: 28px !important;
+        }
+
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 30px 25px !important;
+            }
+            .login-form .input-group input {
+                padding: 13px 40px !important;
+            }
         }
 
         /* Custom Logo CSS */
