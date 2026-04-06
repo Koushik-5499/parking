@@ -1,4 +1,3 @@
-in
 <!DOCTYPE html>
 <html lang="en">
 
@@ -52,16 +51,18 @@ in
     </style>
     <style>
         html, body {
-            overflow-x: hidden;
+            overflow: hidden !important;
             width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            position: fixed;
         }
 
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%) !important;
             color: #1e293b;
             font-family: 'Inter', 'Segoe UI', sans-serif;
-            margin: 0;
-            min-height: 100vh;
         }
 
         /* Ambient Glow Behind Card */
