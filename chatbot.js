@@ -227,7 +227,7 @@ function createChatbotUI() {
             <div id="wake-word-hint" class="wake-word-hint">Say "Hey Dude" 🎙️</div>
             
             <div id="chatbot-window" style="display: none; position: absolute; bottom: 80px; right: 0; width: 350px; height: 500px; background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); flex-direction: column; overflow: hidden;">
-                <div style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <div id="chatbot-header" style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: move;">
                     <div>
                         <h3 style="margin: 0; font-size: 18px;">Parking Assistant</h3>
                         <p style="margin: 0; font-size: 12px; opacity: 0.9;">Ask me anything!</p>
@@ -275,17 +275,132 @@ function createChatbotUI() {
     document.body.insertAdjacentHTML('beforeend', chatbotHTML);
 
     // Event listeners
+    const chatbotContainer = document.getElementById('chatbot-container');
     const chatbotButton = document.getElementById('chatbot-button');
     const chatbotWindow = document.getElementById('chatbot-window');
+    const chatbotHeader = document.getElementById('chatbot-header');
     const closeChatbot = document.getElementById('close-chatbot');
     const sendMessage = document.getElementById('send-message');
     const chatInput = document.getElementById('chat-input');
 
-    chatbotButton.addEventListener('click', () => {
+    // Dragging logic
+    let isDragging = false;
+    let dragStartX, dragStartY, containerInitialX, containerInitialY;
+
+    function adjustWindowPosition() {
+        const rect = chatbotContainer.getBoundingClientRect();
+        if (rect.top < 520) {
+            chatbotWindow.style.bottom = 'auto';
+            chatbotWindow.style.top = '80px';
+        } else {
+            chatbotWindow.style.top = 'auto';
+            chatbotWindow.style.bottom = '80px';
+        }
+
+        if (rect.left < 310) {
+            chatbotWindow.style.right = 'auto';
+            chatbotWindow.style.left = '0px';
+        } else {
+            chatbotWindow.style.left = 'auto';
+            chatbotWindow.style.right = '0px';
+        }
+    }
+
+    function dragStart(e) {
+        if (e.target === closeChatbot || closeChatbot.contains(e.target)) {
+            return;
+        }
+
+        if (e.type === "touchstart") {
+            dragStartX = e.touches[0].clientX;
+            dragStartY = e.touches[0].clientY;
+        } else {
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+            // Only prevent default on the header to avoid issues with chat interactions
+            if (e.currentTarget === chatbotHeader) {
+                e.preventDefault();
+            }
+        }
+
+        const rect = chatbotContainer.getBoundingClientRect();
+        containerInitialX = rect.left;
+        containerInitialY = rect.top;
+        isDragging = false;
+
+        if (e.type === "mousedown") {
+            document.addEventListener('mousemove', dragMove);
+            document.addEventListener('mouseup', dragEnd);
+        } else {
+            document.addEventListener('touchmove', dragMove, { passive: false });
+            document.addEventListener('touchend', dragEnd);
+        }
+    }
+
+    function dragMove(e) {
+        let currentX, currentY;
+        if (e.type === "touchmove") {
+            currentX = e.touches[0].clientX;
+            currentY = e.touches[0].clientY;
+        } else {
+            currentX = e.clientX;
+            currentY = e.clientY;
+        }
+
+        const dx = currentX - dragStartX;
+        const dy = currentY - dragStartY;
+
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+            isDragging = true;
+            if (e.cancelable) e.preventDefault();
+        }
+
+        if (isDragging) {
+            chatbotContainer.style.bottom = 'auto';
+            chatbotContainer.style.right = 'auto';
+
+            let finalLeft = containerInitialX + dx;
+            let finalTop = containerInitialY + dy;
+
+            const maxLeft = window.innerWidth - 60; // 60 is button width
+            const maxTop = window.innerHeight - 60;
+
+            finalLeft = Math.max(0, Math.min(finalLeft, maxLeft));
+            finalTop = Math.max(0, Math.min(finalTop, maxTop));
+
+            chatbotContainer.style.left = finalLeft + 'px';
+            chatbotContainer.style.top = finalTop + 'px';
+
+            if (chatbotWindow.style.display !== 'none') {
+                adjustWindowPosition();
+            }
+        }
+    }
+
+    function dragEnd() {
+        document.removeEventListener('mousemove', dragMove);
+        document.removeEventListener('mouseup', dragEnd);
+        document.removeEventListener('touchmove', dragMove);
+        document.removeEventListener('touchend', dragEnd);
+    }
+
+    chatbotButton.addEventListener('mousedown', dragStart);
+    chatbotButton.addEventListener('touchstart', dragStart, { passive: false });
+
+    chatbotHeader.addEventListener('mousedown', dragStart);
+    chatbotHeader.addEventListener('touchstart', dragStart, { passive: false });
+
+    chatbotButton.addEventListener('click', (e) => {
+        if (isDragging) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
         chatbotWindow.style.display = 'flex';
         chatbotButton.style.display = 'none';
         document.getElementById('wake-word-hint').style.display = 'none';
         chatInput.focus();
+        adjustWindowPosition();
     });
 
     closeChatbot.addEventListener('click', () => {
