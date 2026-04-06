@@ -88,6 +88,16 @@ function loadSlots() {
             if (slot.isVIP || (slot.slotNumber && slot.slotNumber.toString().startsWith('VIP'))) return;
             const slotCard = createSlotCard(slot);
             slotsGrid.appendChild(slotCard);
+            
+            const activeModal = document.getElementById('qr-modal-overlay');
+            if (activeModal && (activeModal.dataset.bookingId === slot.bookingId || activeModal.dataset.bookingId === slot.qrCode)) {
+                const initStatus = activeModal.dataset.initStatus;
+                if (initStatus && initStatus !== slot.status) {
+                    activeModal.remove(); // Auto-close QR code Modal
+                } else if (initStatus === 'occupied' && slot.exitTime) {
+                    activeModal.remove(); // Auto-close when admin scans exit
+                }
+            }
         });
     });
 }
@@ -199,7 +209,7 @@ function createSlotCard(slot) {
         const viewBtn = document.createElement('button');
         viewBtn.style.cssText = 'font-size: 12px; padding: 6px; background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); border: none; color: white; border-radius: 4px; cursor: pointer; font-weight: bold;';
         viewBtn.textContent = 'View QR';
-        viewBtn.onclick = (e) => { e.stopPropagation(); generateQR(bData.qrCode, slot.slotNumber, selectedLocationName, bData.name, bData.vehicleNumber); };
+        viewBtn.onclick = (e) => { e.stopPropagation(); generateQR(bData.qrCode, slot.slotNumber, selectedLocationName, bData.name, bData.vehicleNumber, status); };
 
         const cancelBtn = document.createElement('button');
         cancelBtn.style.cssText = 'font-size: 12px; padding: 6px; background: #ef4444; border: none; color: white; border-radius: 4px; cursor: pointer; font-weight: bold;';
@@ -213,7 +223,7 @@ function createSlotCard(slot) {
         const viewBtn = document.createElement('button');
         viewBtn.style.cssText = 'width: 100%; font-size: 12px; padding: 6px; background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); border: none; color: white; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: auto;';
         viewBtn.textContent = 'View QR';
-        viewBtn.onclick = (e) => { e.stopPropagation(); generateQR(bData.qrCode, slot.slotNumber, selectedLocationName, bData.name, bData.vehicleNumber); };
+        viewBtn.onclick = (e) => { e.stopPropagation(); generateQR(bData.qrCode, slot.slotNumber, selectedLocationName, bData.name, bData.vehicleNumber, status); };
         card.appendChild(viewBtn);
     }
 
@@ -350,7 +360,7 @@ async function handleBooking(e) {
         };
         localStorage.setItem('myBookings', JSON.stringify(myBookings));
 
-        generateQR(bookingId, selectedSlot.slotNumber, selectedLocationName, name, vehicleNumber);
+        generateQR(bookingId, selectedSlot.slotNumber, selectedLocationName, name, vehicleNumber, 'pending');
         closeModal();
 
     } catch (error) {
@@ -359,8 +369,14 @@ async function handleBooking(e) {
     }
 }
 
-function generateQR(bookingId, slotNumber, location, name, vehicleNumber) {
+function generateQR(bookingId, slotNumber, location, name, vehicleNumber, initStatus = '') {
+    const existing = document.getElementById('qr-modal-overlay');
+    if (existing) existing.remove();
+
     const modal = document.createElement('div');
+    modal.id = 'qr-modal-overlay';
+    modal.dataset.bookingId = bookingId;
+    modal.dataset.initStatus = initStatus;
     modal.style.cssText = `
         position: fixed;
         top: 0;
@@ -478,7 +494,8 @@ window.viewMyQR = function (slotId, slotNumber) {
     const myBookingKey = selectedLocation + '_' + slotId;
     const b = myBookings[myBookingKey];
     if (b && b.qrCode) {
-        generateQR(b.qrCode, slotNumber, selectedLocationName, b.name, b.vehicleNumber);
+        // we might not know current status here, default ''
+        generateQR(b.qrCode, slotNumber, selectedLocationName, b.name, b.vehicleNumber, '');
     }
 };
 

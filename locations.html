@@ -19,6 +19,7 @@
             min-height: 100vh;
             padding: 20px;
             padding-bottom: 80px;
+            overflow-x: hidden;
         }
 
         .container {
@@ -51,6 +52,7 @@
         .user-email {
             color: #1e1b4b;
             font-weight: 600;
+            word-break: break-all;
         }
 
         .logout-btn {
@@ -516,6 +518,23 @@
             .header {
                 flex-direction: column;
                 gap: 15px;
+                padding: 15px 20px;
+                text-align: center;
+            }
+
+            .user-info {
+                flex-direction: column;
+                width: 100%;
+                gap: 10px;
+            }
+            
+            .user-email {
+                font-size: 14px;
+                width: 100%;
+            }
+            
+            .logout-btn {
+                width: 100%;
             }
 
             .locations-grid {
