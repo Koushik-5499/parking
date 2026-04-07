@@ -19,7 +19,7 @@ let parkingData = {
     rathinam_gate3: { total: 0, available: 0, pending: 0, occupied: 0 }
 };
 
-// Fetch real-time parking data (excluding VIP slots)
+// ─── Fetch real-time parking data (excluding VIP slots) ─────────────────────
 async function fetchParkingData() {
     const locations = ['rathinam_main_gate', 'rathinam_gate1', 'rathinam_gate3'];
 
@@ -31,12 +31,9 @@ async function fetchParkingData() {
 
         snapshot.forEach((doc) => {
             const slot = doc.data();
-
-            // Skip VIP slots - only count customer-visible slots (1-10)
             if (slot.isVIP || slot.slotNumber?.toString().startsWith('VIP')) {
                 return;
             }
-
             total++;
             if (slot.status === 'available') available++;
             else if (slot.status === 'pending') pending++;
@@ -47,33 +44,118 @@ async function fetchParkingData() {
     }
 }
 
-// Data fetched on demand
-// Chatbot logic
-async function getBotResponse(userMessage) {
-    const msg = userMessage.toLowerCase().trim();
+// ─── Language Detection (Tamil Unicode + Tanglish) ──────────────────────────
+window.currentLang = 'en';
 
-    // Parking slots/availability queries
-    if (msg.includes('parking slot') || msg.includes('parking available') ||
-        msg.includes('available slot') || msg.includes('how many slot') ||
-        msg.includes('slots available') || msg.includes('available parking')) {
-        
+function detectLanguage(text) {
+    // 1. Check for Tamil Unicode characters
+    const tamilPattern = /[\u0B80-\u0BFF]/;
+    if (tamilPattern.test(text)) {
+        return 'ta';
+    }
+
+    // 2. Check for Tanglish words (Tamil written in English)
+    const tanglishWords = [
+        // Common Tamil question/verb words
+        'enga', 'iruku', 'irukka', 'iruka', 'varuma', 'venum',
+        'epdi', 'inga', 'pogum', 'evlo', 'enna', 'sollunga',
+        'pannunga', 'vaanga', 'paarunga', 'theriyuma', 'illa',
+        'undu', 'aagum', 'mudiyuma', 'vendum', 'kodunga',
+        // Parking-specific Tanglish
+        'parkingu', 'slotu', 'slottu', 'kaasu', 'panam',
+        'vaandi', 'vandi', 'nikka', 'nikkanum', 'idam',
+        'edathula', 'kidaikuma', 'kidaikkuma', 'ethana',
+        // Common connectors / fillers
+        'naan', 'nee', 'avan', 'enna', 'ango', 'ingu',
+        'thaan', 'konjam', 'romba', 'seri', 'sari', 'ok da',
+        // Greetings in Tanglish
+        'vanakkam', 'nandri', 'thanks da', 'nanba'
+    ];
+
+    const lower = text.toLowerCase();
+    for (const word of tanglishWords) {
+        if (lower.includes(word)) {
+            return 'ta';
+        }
+    }
+
+    return 'en';
+}
+
+// ─── Smart Text Normalization (speech-error fixes ONLY, NO Tanglish translation) ──
+function normalizeText(text) {
+    let normalized = text.toLowerCase();
+
+    // Only fix common speech-to-text misrecognitions
+    // DO NOT translate Tanglish words to English — keep them as-is
+    const replacements = [
+        [/\bflats?\b/g, 'slot'],
+        [/\bavailble\b/g, 'available'],
+        [/\bavailabl\b/g, 'available'],
+        [/\bavailabel\b/g, 'available'],
+    ];
+
+    for (const [pattern, replacement] of replacements) {
+        normalized = normalized.replace(pattern, replacement);
+    }
+
+    return normalized.trim();
+}
+
+// ─── Noise Filter ───────────────────────────────────────────────────────────
+function isNoise(text) {
+    if (!text) return true;
+    const cleaned = text.trim().toLowerCase();
+    if (cleaned.length < 3) return true;
+    const noiseWords = ['hmm', 'ah', 'uh', 'mmm', 'hm', 'um', 'uhh', 'ahh', 'hmm hmm', 'ha'];
+    return noiseWords.includes(cleaned);
+}
+
+// ─── Chatbot Response Logic (Rule-based, Tamil + English) ───────────────────
+async function getBotResponse(userMessage) {
+    // Detect language from ORIGINAL text first (before normalization)
+    window.currentLang = detectLanguage(userMessage);
+    const lang = window.currentLang;
+
+    // Normalize only for intent matching (not for display)
+    const msg = normalizeText(userMessage);
+
+    // ── Greeting ──
+    if (msg.match(/\b(hi|hello|hey|vanakkam|nandri)\b/)) {
+        if (lang === 'ta') {
+            return `வணக்கம்! 👋 நான் உங்கள் parking assistant. Slots, pricing, booking பற்றி கேளுங்க!`;
+        }
+        return `Hello! 👋 I'm your parking assistant. Ask me about available slots, pricing, or how to book!`;
+    }
+
+    // ── Parking slots / availability queries ──
+    // Match English + Tanglish keywords directly
+    if (msg.includes('slot') || msg.includes('parking') || msg.includes('available') ||
+        msg.includes('iruku') || msg.includes('irukka') || msg.includes('iruka') ||
+        msg.includes('kidaikuma') || msg.includes('kidaikkuma') ||
+        msg.includes('ethana') || msg.includes('எத்தனை') || msg.includes('parkingu') || msg.includes('slotu') || msg.includes('slottu')) {
         await fetchParkingData();
 
-        // Check for specific location
         if (msg.includes('main gate')) {
             const data = parkingData.rathinam_main_gate;
+            if (lang === 'ta') return `Rathinam Main Gate ல ${data.available} slots available இருக்கு (Total: ${data.total}).`;
             return `Rathinam Main Gate has ${data.available} available slots out of ${data.total} total slots.`;
         } else if (msg.includes('gate 1') || msg.includes('gate1')) {
             const data = parkingData.rathinam_gate1;
+            if (lang === 'ta') return `Rathinam Gate 1 ல ${data.available} slots available இருக்கு (Total: ${data.total}).`;
             return `Rathinam Gate 1 has ${data.available} available slots out of ${data.total} total slots.`;
         } else if (msg.includes('gate 3') || msg.includes('gate3')) {
             const data = parkingData.rathinam_gate3;
+            if (lang === 'ta') return `Rathinam Gate 3 ல ${data.available} slots available இருக்கு (Total: ${data.total}).`;
             return `Rathinam Gate 3 has ${data.available} available slots out of ${data.total} total slots.`;
         } else {
-            // All locations
             const mainGate = parkingData.rathinam_main_gate;
             const gate1 = parkingData.rathinam_gate1;
             const gate3 = parkingData.rathinam_gate3;
+
+            if (lang === 'ta') {
+                return `இப்போது parking slots available இருக்கு:\nMain Gate: ${mainGate.available}/${mainGate.total} slots\nGate 1: ${gate1.available}/${gate1.total} slots\nGate 3: ${gate3.available}/${gate3.total} slots`;
+            }
             return `Available parking slots:\n\n` +
                 `Rathinam Main Gate: ${mainGate.available}/${mainGate.total} available\n` +
                 `Rathinam Gate 1: ${gate1.available}/${gate1.total} available\n` +
@@ -81,57 +163,76 @@ async function getBotResponse(userMessage) {
         }
     }
 
-    // Pricing queries
+    // ── Pricing queries (English + Tanglish) ──
     if (msg.includes('price') || msg.includes('cost') || msg.includes('rate') ||
-        msg.includes('charge') || msg.includes('fee') || msg.includes('how much')) {
+        msg.includes('charge') || msg.includes('fee') || msg.includes('how much') ||
+        msg.includes('amount') || msg.includes('kaasu') || msg.includes('panam') ||
+        msg.includes('evlo') || msg.includes('vilai')) {
+        if (lang === 'ta') return `Parking charge ₹80 per hour. Online அல்லது cash ல pay பண்ணலாம்.`;
         return `Our parking rates are ₹80 per hour for all locations. Payment can be made online or in cash at exit.`;
     }
 
-    // Booking queries
-    if (msg.includes('how to book') || msg.includes('book slot') || msg.includes('booking')) {
-        return `To book a parking slot:\n1. Select your preferred location (Main Gate, Gate 1, or Gate 3)\n2. Choose an available slot\n3. Enter your vehicle details\n4. Confirm your booking\n5. Show the QR code at entry`;
+    // ── Booking queries ──
+    if (msg.includes('how to book') || msg.includes('book slot') || msg.includes('booking') || msg.includes('book') ||
+        msg.includes('book pannu') || msg.includes('book pannunga') || msg.includes('booking pannu')) {
+        if (lang === 'ta') {
+            return `Slot book பண்ண:\n1. Location select பண்ணுங்க\n2. Available slot choose பண்ணுங்க\n3. Vehicle details enter பண்ணுங்க\n4. Confirm பண்ணுங்க\n5. QR code show பண்ணுங்க`;
+        }
+        return `To book a parking slot:\n1. Select your preferred location\n2. Choose an available slot\n3. Enter your vehicle details\n4. Confirm your booking\n5. Show the QR code at entry`;
     }
 
-    // Payment queries
-    if (msg.includes('payment') || msg.includes('pay')) {
-        return `Payment options:\n• Pay Online: Use our online payment system\n• Cash: Pay at exit to the admin\n\nPayment is required when you exit the parking facility.`;
+    // ── Location / Direction queries ──
+    if (msg.includes('direction') || msg.includes('location') || msg.includes('where') ||
+        msg.includes('address') || msg.includes('map') || msg.includes('idam') ||
+        msg.includes('enga iruku') || msg.includes('enga') || msg.includes('enga irukkurathu')) {
+        if (lang === 'ta') return `Location details க்கு, location card ல இருக்கிற "📍 Direction" button ah click பண்ணுங்க. Google Maps open ஆகும்.`;
+        return `You can get directions to any parking location by clicking the "📍 Direction" button on the location card. This will open Google Maps.`;
     }
 
-    // Location/Direction queries
-    if (msg.includes('direction') || msg.includes('location') || msg.includes('where') || msg.includes('address')) {
-        return `You can get directions to any parking location by clicking the "📍 Direction" button on the location card. This will open Google Maps with the exact location.`;
+    // ── Payment queries ──
+    if (msg.includes('payment') || msg.includes('pay') || msg.includes('razorpay') || msg.includes('upi') || msg.includes('cash')) {
+        if (lang === 'ta') return `Payment online (Razorpay/UPI) அல்லது exit ல cash ல pay பண்ணலாம். ₹80 per hour.`;
+        return `You can pay online via Razorpay/UPI or pay in cash at the exit gate. Rate is ₹80 per hour.`;
     }
 
-    // VIP queries
-    if (msg.includes('vip') || msg.includes('special')) {
-        return `VIP parking slots are available for special bookings. Please contact the admin or book through the admin dashboard for VIP slots.`;
+    // ── Time / duration queries ──
+    if (msg.includes('time') || msg.includes('hour') || msg.includes('duration') || msg.includes('long')) {
+        if (lang === 'ta') return `Parking எவ்வளவு நேரம் வேணும்னாலும் நிறுத்தலாம். Charge ₹80 per hour.`;
+        return `You can park for as long as you need. Charges are ₹80 per hour, calculated at exit.`;
     }
 
-    // Hours/Timing queries
-    if (msg.includes('hour') || msg.includes('time') || msg.includes('open') || msg.includes('close')) {
-        return `Our parking facilities are open 24/7. You can book and park at any time!`;
+    // ── Help query ──
+    if (msg.includes('help') || msg.includes('what can you do') || msg.includes('enna pannuva')) {
+        if (lang === 'ta') {
+            return `நான் இதெல்லாம் help பண்ண முடியும்:\n• Available slots check\n• Pricing info (₹80/hour)\n• Slot book பண்ற வழி\n• Payment options\n• Direction / Location`;
+        }
+        return `I can help you with:\n• Checking available parking slots\n• Pricing information (₹80/hour)\n• How to book a slot\n• Payment options\n• Getting directions`;
     }
 
-    // Contact/Help queries
-    if (msg.includes('contact') || msg.includes('help') || msg.includes('support') || msg.includes('admin')) {
-        return `For assistance, please contact our admin at 7200746814 or visit the admin desk at any parking location.`;
+    // ── Thank you ──
+    if (msg.match(/\b(thank|thanks|nandri)\b/)) {
+        if (lang === 'ta') return `நன்றி! 🙏 வேறு ஏதாவது help வேணும்னா கேளுங்க.`;
+        return `You're welcome! 😊 Feel free to ask if you need anything else.`;
     }
 
-    // Greeting
-    if (msg.includes('hello') || msg.includes('hi') || msg.includes('hey')) {
-        return `Hello! 👋 I'm your parking assistant. I can help you with:\n• Available parking slots\n• Pricing information\n• Booking process\n• Payment options\n• Directions\n\nWhat would you like to know?`;
+    // ── Default response ──
+    if (lang === 'ta') {
+        return `நான் parking பற்றிய தகவல் சொல்ல முடியும். (Available slots, pricing, booking இத பற்றி கேட்கவும்)`;
     }
-
-    // Thank you
-    if (msg.includes('thank') || msg.includes('thanks')) {
-        return `You're welcome! Happy parking! 🚗`;
-    }
-
-    // Default response
     return `I can help you with:\n• Checking available parking slots\n• Pricing information (₹80/hour)\n• How to book a slot\n• Payment options\n• Getting directions\n\nPlease ask me anything about parking!`;
 }
 
-// Create chatbot UI
+// ─── Text-to-Speech: Speak in same language ─────────────────────────────────
+function speak(text) {
+    window.speechSynthesis.cancel();
+    const speech = new SpeechSynthesisUtterance(text);
+    speech.lang = (window.currentLang === 'ta') ? 'ta-IN' : 'en-IN';
+    speech.rate = 1;
+    speech.pitch = 1;
+    window.speechSynthesis.speak(speech);
+}
+
+// ─── Create Chatbot UI ──────────────────────────────────────────────────────
 function createChatbotUI() {
     const chatbotHTML = `
         <style>
@@ -154,6 +255,7 @@ function createChatbotUI() {
                 align-items: center;
                 justify-content: center;
                 transition: all 0.3s ease;
+                flex-shrink: 0;
             }
             #voice-btn:hover {
                 border-color: #2563eb;
@@ -169,6 +271,8 @@ function createChatbotUI() {
                 0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
                 50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
             }
+
+            /* Listening overlay with Siri-style animation */
             .siri-container {
                 display: none;
                 flex-direction: column;
@@ -189,6 +293,34 @@ function createChatbotUI() {
                 box-shadow: 0 10px 30px rgba(0,0,0,0.3);
                 margin-bottom: 20px;
             }
+            .siri-listening-text {
+                font-weight: 600;
+                font-size: 18px;
+                color: #333;
+                margin-bottom: 6px;
+            }
+            .siri-lang-hint {
+                font-size: 13px;
+                color: #888;
+                margin-bottom: 10px;
+            }
+            .siri-cancel-btn {
+                margin-top: 10px;
+                background: rgba(239, 68, 68, 0.1);
+                border: 2px solid #ef4444;
+                color: #ef4444;
+                padding: 8px 24px;
+                border-radius: 20px;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+            .siri-cancel-btn:hover {
+                background: #ef4444;
+                color: white;
+            }
+
             .wake-word-hint {
                 position: absolute;
                 bottom: 8px;
@@ -219,6 +351,67 @@ function createChatbotUI() {
                 0%, 100% { transform: translateX(0); }
                 50% { transform: translateX(-5px); }
             }
+
+            /* Interim text preview */
+            .interim-preview {
+                display: none;
+                position: absolute;
+                bottom: 70px;
+                left: 15px;
+                right: 15px;
+                background: rgba(37, 99, 235, 0.08);
+                border: 1px solid rgba(37, 99, 235, 0.2);
+                border-radius: 10px;
+                padding: 8px 14px;
+                font-size: 13px;
+                color: #4b5563;
+                font-style: italic;
+                transition: all 0.2s ease;
+            }
+            .interim-preview.active {
+                display: block;
+            }
+
+            /* Typing indicator */
+            .typing-indicator {
+                display: flex;
+                gap: 4px;
+                padding: 10px 15px;
+                align-items: center;
+            }
+            .typing-indicator span {
+                width: 8px;
+                height: 8px;
+                background: #9ca3af;
+                border-radius: 50%;
+                animation: typingBounce 1.4s infinite ease-in-out;
+            }
+            .typing-indicator span:nth-child(1) { animation-delay: 0s; }
+            .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+            .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+            @keyframes typingBounce {
+                0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+                40% { transform: scale(1); opacity: 1; }
+            }
+
+            /* Language badge */
+            .lang-badge {
+                display: inline-block;
+                font-size: 10px;
+                font-weight: 700;
+                text-transform: uppercase;
+                padding: 2px 8px;
+                border-radius: 10px;
+                margin-bottom: 4px;
+            }
+            .lang-badge.en {
+                background: rgba(37, 99, 235, 0.1);
+                color: #2563eb;
+            }
+            .lang-badge.ta {
+                background: rgba(245, 158, 11, 0.1);
+                color: #d97706;
+            }
         </style>
         <div id="chatbot-container" style="position: fixed; bottom: 90px; right: 20px; z-index: 9999;">
             <div id="chatbot-button" style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: all 0.3s ease;">
@@ -230,7 +423,7 @@ function createChatbotUI() {
                 <div id="chatbot-header" style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: move;">
                     <div>
                         <h3 style="margin: 0; font-size: 18px;">Parking Assistant</h3>
-                        <p style="margin: 0; font-size: 12px; opacity: 0.9;">Ask me anything!</p>
+                        <p style="margin: 0; font-size: 12px; opacity: 0.9;">🎙️ Voice + Text • Tamil & English</p>
                     </div>
                     <button id="close-chatbot" style="background: transparent; border: none; color: white; font-size: 24px; cursor: pointer; padding: 0; width: 30px; height: 30px;">×</button>
                 </div>
@@ -238,7 +431,7 @@ function createChatbotUI() {
                 <div id="chat-messages" style="flex: 1; overflow-y: auto; padding: 15px; background: #f9fafb;">
                     <div class="bot-message" style="margin-bottom: 15px;">
                         <div style="background: #e5e7eb; padding: 10px 15px; border-radius: 12px; border-bottom-left-radius: 4px; max-width: 80%; display: inline-block;">
-                            <p style="margin: 0; font-size: 14px; color: #374151; line-height: 1.5;">Hello! 👋 I'm your parking assistant. Ask me anything!</p>
+                            <p style="margin: 0; font-size: 14px; color: #374151; line-height: 1.5;">Hello! 👋 I'm your parking assistant.<br><span style="font-size: 13px; color: #6b7280;">வணக்கம்! நான் உங்கள் parking உதவியாளர்.</span></p>
                         </div>
                         <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;">
                             <button class="quick-reply-btn" data-message="available slots" style="background: white; border: 2px solid #2563eb; color: #2563eb; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
@@ -254,6 +447,9 @@ function createChatbotUI() {
                     </div>
                 </div>
                 
+                <!-- Interim voice preview -->
+                <div id="interim-preview" class="interim-preview"></div>
+
                 <div style="padding: 15px; background: white; border-top: 1px solid #e5e7eb;">
                     <div style="display: flex; gap: 10px;">
                         <input type="text" id="chat-input" placeholder="Type or speak..." style="flex: 1; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; outline: none;">
@@ -266,7 +462,9 @@ function createChatbotUI() {
 
                 <div id="siri-container" class="siri-container">
                     <canvas id="siriCanvas"></canvas>
-                    <div style="font-weight: 600; font-size: 18px; color: #333; margin-bottom: 10px;">Listening...</div>
+                    <div class="siri-listening-text">Listening...</div>
+                    <div class="siri-lang-hint">🌐 Speak in Tamil or English</div>
+                    <button id="siri-cancel-btn" class="siri-cancel-btn">✕ Cancel</button>
                 </div>
             </div>
         </div>
@@ -274,16 +472,22 @@ function createChatbotUI() {
 
     document.body.insertAdjacentHTML('beforeend', chatbotHTML);
 
-    // Event listeners
+    // ─── Element references ─────────────────────────────────────────────────
     const chatbotContainer = document.getElementById('chatbot-container');
     const chatbotButton = document.getElementById('chatbot-button');
     const chatbotWindow = document.getElementById('chatbot-window');
     const chatbotHeader = document.getElementById('chatbot-header');
     const closeChatbot = document.getElementById('close-chatbot');
-    const sendMessage = document.getElementById('send-message');
+    const sendMessageBtn = document.getElementById('send-message');
     const chatInput = document.getElementById('chat-input');
+    const voiceBtn = document.getElementById('voice-btn');
+    const interimPreview = document.getElementById('interim-preview');
+    const siriCancelBtn = document.getElementById('siri-cancel-btn');
 
-    // Dragging logic
+    // Track current voice recognition instance for cancellation
+    let currentRecognition = null;
+
+    // ─── Dragging logic ─────────────────────────────────────────────────────
     let isDragging = false;
     let dragStartX, dragStartY, containerInitialX, containerInitialY;
 
@@ -307,9 +511,7 @@ function createChatbotUI() {
     }
 
     function dragStart(e) {
-        if (e.target === closeChatbot || closeChatbot.contains(e.target)) {
-            return;
-        }
+        if (e.target === closeChatbot || closeChatbot.contains(e.target)) return;
 
         if (e.type === "touchstart") {
             dragStartX = e.touches[0].clientX;
@@ -317,10 +519,7 @@ function createChatbotUI() {
         } else {
             dragStartX = e.clientX;
             dragStartY = e.clientY;
-            // Only prevent default on the header to avoid issues with chat interactions
-            if (e.currentTarget === chatbotHeader) {
-                e.preventDefault();
-            }
+            if (e.currentTarget === chatbotHeader) e.preventDefault();
         }
 
         const rect = chatbotContainer.getBoundingClientRect();
@@ -362,7 +561,7 @@ function createChatbotUI() {
             let finalLeft = containerInitialX + dx;
             let finalTop = containerInitialY + dy;
 
-            const maxLeft = window.innerWidth - 60; // 60 is button width
+            const maxLeft = window.innerWidth - 60;
             const maxTop = window.innerHeight - 60;
 
             finalLeft = Math.max(0, Math.min(finalLeft, maxLeft));
@@ -386,10 +585,10 @@ function createChatbotUI() {
 
     chatbotButton.addEventListener('mousedown', dragStart);
     chatbotButton.addEventListener('touchstart', dragStart, { passive: false });
-
     chatbotHeader.addEventListener('mousedown', dragStart);
     chatbotHeader.addEventListener('touchstart', dragStart, { passive: false });
 
+    // ─── Open / Close chatbot ───────────────────────────────────────────────
     chatbotButton.addEventListener('click', (e) => {
         if (isDragging) {
             e.preventDefault();
@@ -404,62 +603,103 @@ function createChatbotUI() {
     });
 
     closeChatbot.addEventListener('click', () => {
-        window.speechSynthesis.cancel(); // Stop speaking when chatbot is closed
+        window.speechSynthesis.cancel();
+        // Stop any active recognition
+        if (currentRecognition) {
+            try { currentRecognition.abort(); } catch (e) { }
+            currentRecognition = null;
+        }
+        resetVoiceUI();
         chatbotWindow.style.display = 'none';
         chatbotButton.style.display = 'flex';
         document.getElementById('wake-word-hint').style.display = 'block';
     });
 
+    // ─── Cancel voice button inside Siri overlay ────────────────────────────
+    siriCancelBtn.addEventListener('click', () => {
+        if (currentRecognition) {
+            try { currentRecognition.abort(); } catch (e) { }
+            currentRecognition = null;
+        }
+        resetVoiceUI();
+        chatInput.value = '';
+    });
 
-    // Text-to-Speech: AI speaks the response
-    function speak(text) {
-        window.speechSynthesis.cancel(); // stop any ongoing speech
-        const speech = new SpeechSynthesisUtterance(text);
-        speech.lang = 'en-IN';
-        speech.rate = 1;
-        speech.pitch = 1;
-        window.speechSynthesis.speak(speech);
+    // ─── Reset voice UI helper ──────────────────────────────────────────────
+    function resetVoiceUI() {
+        window.isListeningWave = false;
+        document.getElementById('siri-container').style.display = 'none';
+        voiceBtn.classList.remove('listening');
+        voiceBtn.textContent = '🎙️';
+        interimPreview.classList.remove('active');
+        interimPreview.textContent = '';
     }
 
+    // ─── Send user message ──────────────────────────────────────────────────
     function sendUserMessage() {
         const message = chatInput.value.trim();
         if (!message) return;
 
-        // Add user message
         const chatMessages = document.getElementById('chat-messages');
+
+        // Detect language before sending
+        const detectedLang = detectLanguage(message);
+        window.currentLang = detectedLang;
+
+        // User message bubble
         const userMessageHTML = `
             <div class="user-message" style="margin-bottom: 15px; text-align: right;">
                 <div style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: white; padding: 10px 15px; border-radius: 12px; border-bottom-right-radius: 4px; max-width: 80%; display: inline-block; text-align: left;">
                     <p style="margin: 0; font-size: 14px; line-height: 1.5;">${message}</p>
                 </div>
+                <div style="font-size: 10px; color: #9ca3af; margin-top: 3px;">${detectedLang === 'ta' ? '🟡 Tamil' : '🔵 English'}</div>
             </div>
         `;
         chatMessages.insertAdjacentHTML('beforeend', userMessageHTML);
         chatInput.value = '';
+        chatMessages.scrollTop = chatMessages.scrollHeight;
 
-        // Scroll to bottom
+        // Show typing indicator
+        const typingHTML = `
+            <div id="typing-indicator" class="bot-message" style="margin-bottom: 15px;">
+                <div style="background: #e5e7eb; padding: 10px 15px; border-radius: 12px; border-bottom-left-radius: 4px; display: inline-block;">
+                    <div class="typing-indicator">
+                        <span></span><span></span><span></span>
+                    </div>
+                </div>
+            </div>
+        `;
+        chatMessages.insertAdjacentHTML('beforeend', typingHTML);
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
         // Get bot response
         setTimeout(async () => {
             const botResponse = await getBotResponse(message);
+
+            // Remove typing indicator
+            const typingEl = document.getElementById('typing-indicator');
+            if (typingEl) typingEl.remove();
+
+            const langLabel = window.currentLang === 'ta' ? '🟡 Tamil' : '🔵 English';
+
             const botMessageHTML = `
                 <div class="bot-message" style="margin-bottom: 15px;">
                     <div style="background: #e5e7eb; padding: 10px 15px; border-radius: 12px; border-bottom-left-radius: 4px; max-width: 80%; display: inline-block;">
                         <p style="margin: 0; font-size: 14px; color: #374151; line-height: 1.5; white-space: pre-line;">${botResponse}</p>
                     </div>
+                    <div style="font-size: 10px; color: #9ca3af; margin-top: 3px;">🤖 ${langLabel}</div>
                 </div>
             `;
             chatMessages.insertAdjacentHTML('beforeend', botMessageHTML);
             chatMessages.scrollTop = chatMessages.scrollHeight;
-            // Speak the bot response aloud
+
+            // Speak the response in the detected language
             speak(botResponse);
-        }, 500);
+        }, 600);
     }
 
-    // Auto-type effect for quick replies
+    // ─── Auto-type effect for quick replies ─────────────────────────────────
     function autoTypeMessage(message) {
-        const chatInput = document.getElementById('chat-input');
         chatInput.value = '';
         chatInput.focus();
 
@@ -470,12 +710,9 @@ function createChatbotUI() {
                 index++;
             } else {
                 clearInterval(typingInterval);
-                // Auto-send after typing completes
-                setTimeout(() => {
-                    sendUserMessage();
-                }, 300);
+                setTimeout(() => sendUserMessage(), 300);
             }
-        }, 50); // 50ms per character for typing effect
+        }, 50);
     }
 
     // Handle quick reply buttons
@@ -486,22 +723,19 @@ function createChatbotUI() {
         }
     });
 
-    sendMessage.addEventListener('click', sendUserMessage);
+    sendMessageBtn.addEventListener('click', sendUserMessage);
 
     chatInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            sendUserMessage();
-        }
+        if (e.key === 'Enter') sendUserMessage();
     });
 
     chatInput.addEventListener('input', () => {
-        window.speechSynthesis.cancel(); // stop speaking when user starts typing
+        window.speechSynthesis.cancel();
     });
 
-    // Voice Recognition
-    const voiceBtn = document.getElementById('voice-btn');
+    // ─── Voice Recognition (Free Web Speech API) ────────────────────────────
     voiceBtn.addEventListener('click', () => {
-        window.speechSynthesis.cancel(); // stop speaking when mic is clicked
+        window.speechSynthesis.cancel();
         startVoice(sendUserMessage);
     });
 
@@ -516,67 +750,127 @@ function createChatbotUI() {
         if (wakeRecognition) {
             try { wakeRecognition.abort(); } catch (e) { }
         }
-        window._commandListening = true; // prevent wake word auto-restart
+        window._commandListening = true;
 
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'en-IN';
-        recognition.interimResults = false;
-        recognition.maxAlternatives = 1;
+        // Track if we got a meaningful result in this attempt
+        let gotResult = false;
 
-        recognition.start();
+        function attemptRecognition(lang, isRetry) {
+            const recognition = new SpeechRecognition();
+            recognition.lang = lang;
+            recognition.interimResults = true;
+            recognition.maxAlternatives = 5;
+            recognition.continuous = false;
 
-        recognition.onstart = () => {
-            console.log('Voice recognition started...');
-            window.isListeningWave = true;
-            document.getElementById('siri-container').style.display = 'flex';
-            voiceBtn.classList.add('listening');
-            voiceBtn.textContent = '🔴';
-        };
+            currentRecognition = recognition;
 
-        recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
-            document.getElementById('chat-input').value = transcript;
-            window.isListeningWave = false;
-            document.getElementById('siri-container').style.display = 'none';
-            voiceBtn.classList.remove('listening');
-            voiceBtn.textContent = '🎙️';
-            // Auto-send the recognized speech
-            callback();
-        };
+            recognition.start();
 
-        recognition.onerror = (event) => {
-            console.error('Voice recognition error:', event.error);
-            window.isListeningWave = false;
-            document.getElementById('siri-container').style.display = 'none';
-            voiceBtn.classList.remove('listening');
-            voiceBtn.textContent = '🎙️';
-        };
+            recognition.onstart = () => {
+                console.log(`🎙️ Voice recognition started (${lang})...`);
+                window.isListeningWave = true;
+                document.getElementById('siri-container').style.display = 'flex';
+                voiceBtn.classList.add('listening');
+                voiceBtn.textContent = '🔴';
 
-        recognition.onend = () => {
-            window.isListeningWave = false;
-            document.getElementById('siri-container').style.display = 'none';
-            voiceBtn.classList.remove('listening');
-            voiceBtn.textContent = '🎙️';
-            // Resume wake word listener
-            window._commandListening = false;
-            setTimeout(() => startWakeWord(), 500);
-        };
+                // Show language hint during retry
+                const listeningText = document.querySelector('.siri-listening-text');
+                if (listeningText) {
+                    listeningText.textContent = isRetry ? 'Listening (Tamil)...' : 'Listening...';
+                }
+            };
+
+            recognition.onresult = (event) => {
+                let interimText = '';
+                let finalText = '';
+
+                for (let i = 0; i < event.results.length; i++) {
+                    if (event.results[i].isFinal) {
+                        finalText = event.results[i][0].transcript;
+                    } else {
+                        interimText += event.results[i][0].transcript;
+                    }
+                }
+
+                // Show interim text as live preview
+                if (interimText) {
+                    interimPreview.textContent = `🎤 "${interimText}"`;
+                    interimPreview.classList.add('active');
+                }
+
+                if (finalText && !isNoise(finalText.trim())) {
+                    gotResult = true;
+                    // If ta-IN recognition, force Tamil language
+                    if (lang === 'ta-IN') {
+                        window.currentLang = 'ta';
+                    } else {
+                        window.currentLang = detectLanguage(finalText);
+                    }
+
+                    chatInput.value = finalText.trim();
+                    interimPreview.classList.remove('active');
+                    interimPreview.textContent = '';
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.error(`Voice recognition error (${lang}):`, event.error);
+                // If English attempt had a "no-speech" error, try Tamil
+                if (!isRetry && (event.error === 'no-speech' || event.error === 'audio-capture')) {
+                    console.log('🔄 Retrying with Tamil (ta-IN)...');
+                    attemptRecognition('ta-IN', true);
+                    return;
+                }
+                resetVoiceUI();
+                currentRecognition = null;
+                window._commandListening = false;
+                setTimeout(() => startWakeWord(), 500);
+            };
+
+            recognition.onend = () => {
+                currentRecognition = null;
+
+                // If first attempt (en-IN) got no result, auto-retry with Tamil
+                if (!isRetry && !gotResult) {
+                    console.log('🔄 No English result, retrying with Tamil (ta-IN)...');
+                    attemptRecognition('ta-IN', true);
+                    return;
+                }
+
+                // Done — reset UI
+                resetVoiceUI();
+                const listeningText = document.querySelector('.siri-listening-text');
+                if (listeningText) listeningText.textContent = 'Listening...';
+
+                window._commandListening = false;
+                setTimeout(() => startWakeWord(), 500);
+
+                const finalVal = chatInput.value;
+                if (finalVal && !isNoise(finalVal)) {
+                    callback();
+                } else {
+                    chatInput.value = '';
+                }
+            };
+        }
+
+        // Start with English first, auto-fallback to Tamil
+        attemptRecognition('en-IN', false);
     }
 }
 
-// Initialize chatbot when DOM is loaded
+// ─── Initialize chatbot ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     createChatbotUI();
     startWakeWord();
 });
 
-// ─── Wake Word System ────────────────────────────────────────────────────────
-
+// ─── Wake Word System ("Hey Dude") ──────────────────────────────────────────
 let wakeRecognition;
 
 function startWakeWord() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) return; // browser doesn't support it
+    if (!SpeechRecognition) return;
 
     wakeRecognition = new SpeechRecognition();
     wakeRecognition.lang = 'en-IN';
@@ -588,7 +882,7 @@ function startWakeWord() {
         console.log('Heard:', transcript);
 
         if (transcript.includes('hey dude')) {
-            console.log('Wake word detected!');
+            console.log('🎉 Wake word detected!');
 
             // Open chatbot window if not already open
             const chatbotWindow = document.getElementById('chatbot-window');
@@ -617,7 +911,6 @@ function startWakeWord() {
     };
 
     wakeRecognition.onend = function () {
-        // Restart wake listener unless a command is being processed
         if (!window._commandListening) {
             setTimeout(() => startWakeWord(), 500);
         }
@@ -626,71 +919,130 @@ function startWakeWord() {
     wakeRecognition.start();
 }
 
+// ─── Command Listening (after wake word) ────────────────────────────────────
 function startCommandListening() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) return;
 
     window._commandListening = true;
 
-    const commandRec = new SpeechRecognition();
-    commandRec.lang = 'en-IN';
-    commandRec.interimResults = false;
-    commandRec.maxAlternatives = 1;
-
-    // Show mic active state on voice button
     const voiceBtn = document.getElementById('voice-btn');
-    if (voiceBtn) {
-        voiceBtn.classList.add('listening');
-        voiceBtn.textContent = '🔴';
-    }
+    const interimPreview = document.getElementById('interim-preview');
+    let gotResult = false;
 
-    commandRec.start();
-
-    commandRec.onstart = function () {
-        window.isListeningWave = true;
-        const siriContainer = document.getElementById('siri-container');
-        if (siriContainer) siriContainer.style.display = 'flex';
-    };
-
-    commandRec.onresult = function (event) {
-        window.isListeningWave = false;
-        const siriContainer = document.getElementById('siri-container');
-        if (siriContainer) siriContainer.style.display = 'none';
-
-        const command = event.results[0][0].transcript;
-        console.log('Command:', command);
-
-        // Put command into chat input and send it
-        const chatInput = document.getElementById('chat-input');
-        if (chatInput) {
-            chatInput.value = command;
-        }
-
-        // Reuse the existing sendUserMessage flow via the send button
-        const sendBtn = document.getElementById('send-message');
-        if (sendBtn) sendBtn.click();
-    };
-
-    commandRec.onerror = function (e) {
-        window.isListeningWave = false;
-        const siriContainer = document.getElementById('siri-container');
-        if (siriContainer) siriContainer.style.display = 'none';
-        console.log('Command error:', e.error);
-    };
-
-    commandRec.onend = function () {
-        window.isListeningWave = false;
-        const siriContainer = document.getElementById('siri-container');
-        if (siriContainer) siriContainer.style.display = 'none';
+    function attemptCommand(lang, isRetry) {
+        const commandRec = new SpeechRecognition();
+        commandRec.lang = lang;
+        commandRec.interimResults = true;
+        commandRec.maxAlternatives = 5;
 
         if (voiceBtn) {
-            voiceBtn.classList.remove('listening');
-            voiceBtn.textContent = '🎙️';
+            voiceBtn.classList.add('listening');
+            voiceBtn.textContent = '🔴';
         }
-        window._commandListening = false;
-        // Resume wake word listening
-        setTimeout(() => startWakeWord(), 500);
-    };
+
+        commandRec.start();
+
+        commandRec.onstart = function () {
+            window.isListeningWave = true;
+            const siriContainer = document.getElementById('siri-container');
+            if (siriContainer) siriContainer.style.display = 'flex';
+
+            const listeningText = document.querySelector('.siri-listening-text');
+            if (listeningText) {
+                listeningText.textContent = isRetry ? 'Listening (Tamil)...' : 'Listening...';
+            }
+        };
+
+        commandRec.onresult = function (event) {
+            let interimText = '';
+            let finalText = '';
+
+            for (let i = 0; i < event.results.length; i++) {
+                if (event.results[i].isFinal) {
+                    finalText = event.results[i][0].transcript;
+                } else {
+                    interimText += event.results[i][0].transcript;
+                }
+            }
+
+            if (interimText && interimPreview) {
+                interimPreview.textContent = `🎤 "${interimText}"`;
+                interimPreview.classList.add('active');
+            }
+
+            if (finalText && !isNoise(finalText.trim())) {
+                gotResult = true;
+
+                if (lang === 'ta-IN') {
+                    window.currentLang = 'ta';
+                } else {
+                    window.currentLang = detectLanguage(finalText);
+                }
+
+                const chatInput = document.getElementById('chat-input');
+                if (chatInput) chatInput.value = finalText.trim();
+
+                if (interimPreview) {
+                    interimPreview.classList.remove('active');
+                    interimPreview.textContent = '';
+                }
+            }
+        };
+
+        commandRec.onerror = function (e) {
+            console.log(`Command error (${lang}):`, e.error);
+            if (!isRetry && (e.error === 'no-speech' || e.error === 'audio-capture')) {
+                console.log('🔄 Retrying command with Tamil (ta-IN)...');
+                attemptCommand('ta-IN', true);
+                return;
+            }
+            window.isListeningWave = false;
+            const siriContainer = document.getElementById('siri-container');
+            if (siriContainer) siriContainer.style.display = 'none';
+        };
+
+        commandRec.onend = function () {
+            // If first attempt got no result, retry with Tamil
+            if (!isRetry && !gotResult) {
+                console.log('🔄 No English result from command, retrying Tamil...');
+                attemptCommand('ta-IN', true);
+                return;
+            }
+
+            window.isListeningWave = false;
+            const siriContainer = document.getElementById('siri-container');
+            if (siriContainer) siriContainer.style.display = 'none';
+
+            const listeningText = document.querySelector('.siri-listening-text');
+            if (listeningText) listeningText.textContent = 'Listening...';
+
+            if (voiceBtn) {
+                voiceBtn.classList.remove('listening');
+                voiceBtn.textContent = '🎙️';
+            }
+
+            if (interimPreview) {
+                interimPreview.classList.remove('active');
+                interimPreview.textContent = '';
+            }
+
+            window._commandListening = false;
+
+            // Auto-send if not noise
+            const chatInput = document.getElementById('chat-input');
+            if (chatInput && chatInput.value && !isNoise(chatInput.value)) {
+                const sendBtn = document.getElementById('send-message');
+                if (sendBtn) sendBtn.click();
+            }
+
+            // Resume wake word listening
+            setTimeout(() => startWakeWord(), 500);
+        };
+    }
+
+    // Start with English, auto-fallback to Tamil
+    attemptCommand('en-IN', false);
 }
 
 // ─── Siri Wave Animation System ─────────────────────────────────────────────
