@@ -5,7 +5,10 @@ import {
     signInWithPopup,
     GoogleAuthProvider,
     sendPasswordResetEmail,
-    sendEmailVerification
+    sendEmailVerification,
+    setPersistence,
+    browserLocalPersistence,
+    onAuthStateChanged
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
 const firebaseConfig = {
@@ -20,6 +23,18 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
+
+// 🔥 AUTO REDIRECT (runs on page load)
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        // Already logged in → go to dashboard
+        if (user.email === 'koushik4680@gmail.com') {
+            window.location.href = 'admin-dashboard.html';
+        } else {
+            window.location.href = 'locations.html';
+        }
+    }
+});
 
 function showAlert(message, type) {
     const existing = document.querySelector('.auth-alert');
@@ -84,6 +99,7 @@ loginForm.addEventListener('submit', async function (e) {
     setLoading(loginBtn, true);
 
     try {
+        await setPersistence(auth, browserLocalPersistence);
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
