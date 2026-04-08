@@ -995,7 +995,6 @@ function startCommandListening() {
 
 // Start with English, auto-fallback to Tamil
 attemptCommand('en-IN', false);
-}
 
 // ─── Siri Wave Animation System ─────────────────────────────────────────────
 window.isListeningWave = false;
