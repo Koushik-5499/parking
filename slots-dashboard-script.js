@@ -284,6 +284,11 @@ async function handleBooking(e) {
         return;
     }
 
+    if (!/^\d{10}$/.test(phone)) {
+        alert('Please enter exactly a 10-digit phone number.');
+        return;
+    }
+
     try {
         const userEmail = currentUser ? currentUser.email : 'Guest';
         if (userEmail !== 'Guest') {

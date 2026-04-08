@@ -277,7 +277,7 @@
                 </div>
                 <div class="input-group">
                     <label>Phone Number</label>
-                    <input type="tel" id="bookingPhone" required>
+                    <input type="tel" id="bookingPhone" pattern="[0-9]{10}" maxlength="10" title="Please enter exactly 10 digits" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);" required>
                 </div>
 
                 <div class="input-group" style="margin-bottom: 20px;">

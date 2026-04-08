@@ -294,7 +294,15 @@ async function getBotResponse(userMessage) {
 
     // ── STEP: Ask Phone ──
     if (bookingState.step === "ask_phone") {
-        bookingState.phone = userMessage.trim();
+        const extractedPhone = userMessage.replace(/\D/g, ''); // Extract only digits
+        
+        if (extractedPhone.length !== 10) {
+            return lang === 'ta' 
+                ? `❌ தவறான எண்.\n📱 சரியான 10 இலக்க தொலைபேசி எண்ணை மட்டும் உள்ளிடவும்:` 
+                : `❌ Invalid number.\n📱 Please enter exactly a 10-digit phone number:`;
+        }
+        
+        bookingState.phone = extractedPhone;
         bookingState.step = "ask_vehicle";
         return lang === 'ta' ? `📱 தொலைபேசி: ${bookingState.phone}\n\n🚗 உங்கள் வாகன எண்ணை உள்ளிடவும்:` : `📱 Phone: ${bookingState.phone}\n\n🚗 Enter your vehicle number:`;
     }
