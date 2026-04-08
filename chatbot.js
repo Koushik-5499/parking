@@ -40,13 +40,25 @@ function resetBookingState() {
 async function showAvailableSlots(location) {
     const slotsRef = collection(db, 'parking_locations', location, 'slots');
     const snapshot = await getDocs(slotsRef);
-    let buttons = "";
+    let slotsArray = [];
     snapshot.forEach(d => {
         const slot = d.data();
         if (slot.status === "available" && !slot.isVIP && !slot.slotNumber?.toString().startsWith('VIP')) {
-            buttons += `<button class="slot-btn" data-id="${d.id}" data-slot="${slot.slotNumber}">Slot ${slot.slotNumber}</button>`;
+            slotsArray.push({ id: d.id, ...slot });
         }
     });
+
+    slotsArray.sort((a, b) => {
+        const numA = parseInt(a.slotNumber) || 0;
+        const numB = parseInt(b.slotNumber) || 0;
+        return numA - numB;
+    });
+
+    let buttons = "";
+    slotsArray.forEach(slot => {
+        buttons += `<button class="slot-btn" data-id="${slot.id}" data-slot="${slot.slotNumber}">Slot ${slot.slotNumber}</button>`;
+    });
+
     if (!buttons) return `<p>❌ No available slots at this location right now. Try another gate!</p>`;
     return `<p>Select a slot:</p><div class="slot-btn-grid">${buttons}</div>`;
 }
