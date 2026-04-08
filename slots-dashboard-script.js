@@ -284,8 +284,18 @@ async function handleBooking(e) {
         return;
     }
 
+    if (!/^[A-Za-z\s]+$/.test(name)) {
+        alert('Please enter a valid name (letters and spaces only, no numbers or symbols).');
+        return;
+    }
+
     if (!/^\d{10}$/.test(phone)) {
         alert('Please enter exactly a 10-digit phone number.');
+        return;
+    }
+
+    if (!/^[A-Z0-9]+$/.test(vehicleNumber)) {
+        alert('Please enter a valid Vehicle Number (uppercase letters and numbers only, no spaces or symbols).');
         return;
     }
 

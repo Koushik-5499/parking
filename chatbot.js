@@ -287,7 +287,16 @@ async function getBotResponse(userMessage) {
 
     // ── STEP: Ask Name ──
     if (bookingState.step === "ask_name") {
-        bookingState.name = userMessage.trim();
+        const nameInput = userMessage.trim();
+        
+        // Match English letters, spaces, and Tamil Unicode letters. No numbers/symbols
+        if (!/^[A-Za-z\s\u0B80-\u0BFF]+$/.test(nameInput)) {
+            return lang === 'ta' 
+                ? `❌ தவறான பெயர்.\n👤 தயவுசெய்து எழுத்துக்களை மட்டும் உள்ளிடவும் (எண்கள் மற்றும் குறியீடுகளைத் தவிர்க்கவும்):` 
+                : `❌ Invalid name.\n👤 Please enter only letters (no numbers or symbols):`;
+        }
+        
+        bookingState.name = nameInput;
         bookingState.step = "ask_phone";
         return lang === 'ta' ? `👤 பெயர்: ${bookingState.name}\n\n📱 உங்கள் தொலைபேசி எண்ணை உள்ளிடவும்:` : `👤 Name: ${bookingState.name}\n\n📱 Enter your phone number:`;
     }
@@ -309,7 +318,16 @@ async function getBotResponse(userMessage) {
 
     // ── STEP: Ask Vehicle ──
     if (bookingState.step === "ask_vehicle") {
-        bookingState.vehicle = userMessage.trim();
+        // Automatically convert to uppercase and remove spaces/symbols
+        const vehicleInput = userMessage.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        
+        if (!vehicleInput || vehicleInput.length < 4) {
+            return lang === 'ta' 
+                ? `❌ தவறான வாகன எண்.\n🚗 தயவுசெய்து சரியான வாகன எண்ணை உள்ளிடவும் (எண்கள் மற்றும் எழுத்துக்கள் மட்டும்):` 
+                : `❌ Invalid vehicle number.\n🚗 Please enter a valid vehicle number (letters and numbers only):`;
+        }
+        
+        bookingState.vehicle = vehicleInput;
         bookingState.step = "confirm";
         const summary = lang === 'ta'
             ? `📋 உறுதிப்படுத்தவும்:\n\n📍 இடம்: ${bookingState.locationName}\n🅿️ ஸ்லாட்: ${bookingState.slot.number}\n👤 பெயர்: ${bookingState.name}\n📱 தொலைபேசி: ${bookingState.phone}\n🚗 வாகனம்: ${bookingState.vehicle}`
