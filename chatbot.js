@@ -197,16 +197,17 @@ function detectLanguage(text) {
         'enga', 'iruku', 'irukka', 'iruka', 'varuma', 'venum',
         'epdi', 'inga', 'pogum', 'evlo', 'enna', 'sollunga',
         'pannunga', 'vaanga', 'paarunga', 'theriyuma', 'illa',
-        'undu', 'aagum', 'mudiyuma', 'vendum', 'kodunga',
+        'undu', 'aagum', 'mudiyuma', 'vendum', 'kodunga', 
+        'eruku', 'eruka', 'erukka', 'pannu', 'etha', 'ethu',
         // Parking-specific Tanglish
         'parkingu', 'slotu', 'slottu', 'kaasu', 'panam',
         'vaandi', 'vandi', 'nikka', 'nikkanum', 'idam',
-        'edathula', 'kidaikuma', 'kidaikkuma', 'ethana',
+        'edathula', 'kidaikuma', 'kidaikkuma', 'ethana', 'etha na',
         // Common connectors / fillers
         'naan', 'nee', 'avan', 'enna', 'ango', 'ingu',
         'thaan', 'konjam', 'romba', 'seri', 'sari', 'ok da',
         // Greetings in Tanglish
-        'vanakkam', 'nandri', 'thanks da', 'nanba'
+        'vanakkam', 'nandri', 'thanks da', 'nanba', 'nanbane', 'mame'
     ];
 
     const lower = text.toLowerCase();
@@ -1147,7 +1148,7 @@ function createChatbotUI() {
                 console.log('⏱️ Silence timeout — stopping recognition');
                 abortedByUs = true;
                 try { recognition.stop(); } catch (e) { }
-            }, 4000); // 4 seconds of silence before auto-stop
+            }, 6000); // 6 seconds of silence before auto-stop
         }
 
         function attemptRecognition(lang, isRetry) {
@@ -1312,12 +1313,9 @@ function startWakeWord() {
             window._commandListening = true;
             wakeRecognition.stop();
 
-            // Respond and listen for command
+            // FAST RESPOND: Instant opening of mic without voice delay!
             window.speechSynthesis.cancel();
-            const ack = new SpeechSynthesisUtterance('Yes, tell me');
-            ack.lang = 'en-IN';
-            ack.onend = () => setTimeout(() => startCommandListening(), 300);
-            window.speechSynthesis.speak(ack);
+            setTimeout(() => startCommandListening(), 50);
         }
     };
 
@@ -1356,7 +1354,7 @@ function startCommandListening() {
         silenceTimer = setTimeout(() => {
             abortedByUs = true;
             try { rec.stop(); } catch (e) { }
-        }, 4000);
+        }, 6000);
     }
 
     function attemptCommand(lang, isRetry) {
