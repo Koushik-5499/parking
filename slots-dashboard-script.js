@@ -294,8 +294,8 @@ async function handleBooking(e) {
         return;
     }
 
-    if (!/^[A-Z0-9]+$/.test(vehicleNumber)) {
-        alert('Please enter a valid Vehicle Number (uppercase letters and numbers only, no spaces or symbols).');
+    if (!/^[A-Z]{2}[0-9]{2}[A-Z]{1}[0-9]{4}$/.test(vehicleNumber)) {
+        alert('Invalid Vehicle Number. Format: 2 Letters, 2 Numbers, 1 Letter, 4 Numbers (e.g., TN01A1234)');
         return;
     }
 

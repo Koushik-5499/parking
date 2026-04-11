@@ -197,7 +197,7 @@ function detectLanguage(text) {
         'enga', 'iruku', 'irukka', 'iruka', 'varuma', 'venum',
         'epdi', 'inga', 'pogum', 'evlo', 'enna', 'sollunga',
         'pannunga', 'vaanga', 'paarunga', 'theriyuma', 'illa',
-        'undu', 'aagum', 'mudiyuma', 'vendum', 'kodunga', 
+        'undu', 'aagum', 'mudiyuma', 'vendum', 'kodunga',
         'eruku', 'eruka', 'erukka', 'pannu', 'etha', 'ethu',
         // Parking-specific Tanglish
         'parkingu', 'slotu', 'slottu', 'kaasu', 'panam',
@@ -274,6 +274,7 @@ async function getBotResponse(userMessage) {
             bookingState.location = "rathinam_main_gate";
             bookingState.locationName = "Rathinam Main Gate";
         } else {
+            window._customSpeech = lang === 'ta' ? "மெயின் கேட், கேட் 1, கேட் 3" : "Main Gate, Gate 1, Gate 3";
             return lang === 'ta'
                 ? `சரியான இடத்தை தேர்ந்தெடுக்கவும் 👇\n<div class="slot-btn-grid"><button class="location-pick-btn" data-loc="rathinam_main_gate" data-name="Main Gate">🏢 Main Gate</button><button class="location-pick-btn" data-loc="rathinam_gate1" data-name="Gate 1">🚪 Gate 1</button><button class="location-pick-btn" data-loc="rathinam_gate3" data-name="Gate 3">🏭 Gate 3</button></div>`
                 : `Please select a valid location 👇\n<div class="slot-btn-grid"><button class="location-pick-btn" data-loc="rathinam_main_gate" data-name="Main Gate">🏢 Main Gate</button><button class="location-pick-btn" data-loc="rathinam_gate1" data-name="Gate 1">🚪 Gate 1</button><button class="location-pick-btn" data-loc="rathinam_gate3" data-name="Gate 3">🏭 Gate 3</button></div>`;
@@ -283,37 +284,42 @@ async function getBotResponse(userMessage) {
         const header = lang === 'ta'
             ? `📍 ${bookingState.locationName} — காலியான ஸ்லாட்டுகள்:`
             : `📍 ${bookingState.locationName} — Available slots:`;
+        window._customSpeech = lang === 'ta' ? "ஒரு ஸ்லாட்டை தேர்ந்தெடுக்கவும்:" : "Select a slot:";
         return `${header}\n${slotsHTML}`;
     }
 
     // ── STEP: Ask Name ──
     if (bookingState.step === "ask_name") {
         const nameInput = userMessage.trim();
-        
+
         // Match English letters, spaces, and Tamil Unicode letters. No numbers/symbols
         if (!/^[A-Za-z\s\u0B80-\u0BFF]+$/.test(nameInput)) {
-            return lang === 'ta' 
-                ? `❌ தவறான பெயர்.\n👤 தயவுசெய்து எழுத்துக்களை மட்டும் உள்ளிடவும் (எண்கள் மற்றும் குறியீடுகளைத் தவிர்க்கவும்):` 
+            window._customSpeech = lang === 'ta' ? "தயவுசெய்து எழுத்துக்களை மட்டும் உள்ளிடவும்" : "Please enter only letters";
+            return lang === 'ta'
+                ? `❌ தவறான பெயர்.\n👤 தயவுசெய்து எழுத்துக்களை மட்டும் உள்ளிடவும் (எண்கள் மற்றும் குறியீடுகளைத் தவிர்க்கவும்):`
                 : `❌ Invalid name.\n👤 Please enter only letters (no numbers or symbols):`;
         }
-        
+
         bookingState.name = nameInput;
         bookingState.step = "ask_phone";
+        window._customSpeech = lang === 'ta' ? "உங்கள் தொலைபேசி எண்ணை உள்ளிடவும்" : "Enter your phone number";
         return lang === 'ta' ? `👤 பெயர்: ${bookingState.name}\n\n📱 உங்கள் தொலைபேசி எண்ணை உள்ளிடவும்:` : `👤 Name: ${bookingState.name}\n\n📱 Enter your phone number:`;
     }
 
     // ── STEP: Ask Phone ──
     if (bookingState.step === "ask_phone") {
         const extractedPhone = userMessage.replace(/\D/g, ''); // Extract only digits
-        
+
         if (extractedPhone.length !== 10) {
-            return lang === 'ta' 
-                ? `❌ தவறான எண்.\n📱 சரியான 10 இலக்க தொலைபேசி எண்ணை மட்டும் உள்ளிடவும்:` 
+            window._customSpeech = lang === 'ta' ? "சரியான 10 இலக்க தொலைபேசி எண்ணை மட்டும் உள்ளிடவும்" : "Please enter exactly a 10-digit phone number";
+            return lang === 'ta'
+                ? `❌ தவறான எண்.\n📱 சரியான 10 இலக்க தொலைபேசி எண்ணை மட்டும் உள்ளிடவும்:`
                 : `❌ Invalid number.\n📱 Please enter exactly a 10-digit phone number:`;
         }
-        
+
         bookingState.phone = extractedPhone;
         bookingState.step = "ask_vehicle";
+        window._customSpeech = lang === 'ta' ? "உங்கள் வாகன எண்ணை உள்ளிடவும்" : "Enter your vehicle number";
         return lang === 'ta' ? `📱 தொலைபேசி: ${bookingState.phone}\n\n🚗 உங்கள் வாகன எண்ணை உள்ளிடவும்:` : `📱 Phone: ${bookingState.phone}\n\n🚗 Enter your vehicle number:`;
     }
 
@@ -321,15 +327,17 @@ async function getBotResponse(userMessage) {
     if (bookingState.step === "ask_vehicle") {
         // Automatically convert to uppercase and remove spaces/symbols
         const vehicleInput = userMessage.toUpperCase().replace(/[^A-Z0-9]/g, '');
-        
-        if (!vehicleInput || vehicleInput.length < 4) {
-            return lang === 'ta' 
-                ? `❌ தவறான வாகன எண்.\n🚗 தயவுசெய்து சரியான வாகன எண்ணை உள்ளிடவும் (எண்கள் மற்றும் எழுத்துக்கள் மட்டும்):` 
-                : `❌ Invalid vehicle number.\n🚗 Please enter a valid vehicle number (letters and numbers only):`;
+
+        if (!/^[A-Z]{2}[0-9]{2}[A-Z]{1}[0-9]{4}$/.test(vehicleInput)) {
+            window._customSpeech = lang === 'ta' ? "சரியான வாகன எண்ணை உள்ளிடவும்" : "Please enter a valid vehicle number";
+            return lang === 'ta'
+                ? `❌ தவறான வாகன எண்.\n🚗 தயவுசெய்து சரியான வாகன எண்ணை உள்ளிடவும் (எ.கா: TN01A1234):`
+                : `❌ Invalid vehicle number.\n🚗 Please enter a valid vehicle number format: (e.g. TN01A1234):`;
         }
-        
+
         bookingState.vehicle = vehicleInput;
         bookingState.step = "confirm";
+        window._customSpeech = lang === 'ta' ? "உங்கள் பதிவை உறுதிப்படுத்தவும்" : "Confirm your booking";
         const summary = lang === 'ta'
             ? `📋 உறுதிப்படுத்தவும்:\n\n📍 இடம்: ${bookingState.locationName}\n🅿️ ஸ்லாட்: ${bookingState.slot.number}\n👤 பெயர்: ${bookingState.name}\n📱 தொலைபேசி: ${bookingState.phone}\n🚗 வாகனம்: ${bookingState.vehicle}`
             : `📋 Confirm your booking:\n\n📍 Location: ${bookingState.locationName}\n🅿️ Slot: ${bookingState.slot.number}\n👤 Name: ${bookingState.name}\n📱 Phone: ${bookingState.phone}\n🚗 Vehicle: ${bookingState.vehicle}`;
@@ -342,6 +350,7 @@ async function getBotResponse(userMessage) {
             try {
                 await confirmBooking();
                 resetBookingState();
+                window._customSpeech = lang === 'ta' ? "ஸ்லாட் வெற்றிகரமாக பதிவு செய்யப்பட்டது! நன்றி!" : "Slot booked successfully! Thank you!";
                 return lang === 'ta' ? `✅ ஸ்லாட் வெற்றிகரமாக பதிவு செய்யப்பட்டது! 🎉\nநன்றி!` : `✅ Slot booked successfully! 🎉\nThank you!`;
             } catch (err) {
                 console.error("Booking error:", err);
@@ -350,6 +359,7 @@ async function getBotResponse(userMessage) {
             }
         } else {
             resetBookingState();
+            window._customSpeech = lang === 'ta' ? "பதிவு ரத்து செய்யப்பட்டது. வேறு ஏதாவது உதவி வேண்டுமா?" : "Booking cancelled. Need anything else?";
             return lang === 'ta' ? `❌ பதிவு ரத்து செய்யப்பட்டது. வேறு ஏதாவது உதவி வேண்டுமா?` : `❌ Booking cancelled. Need anything else?`;
         }
     }
@@ -360,6 +370,7 @@ async function getBotResponse(userMessage) {
     if (msg.includes('book slot') || msg.includes('book pannu') || msg.includes('book pannunga') ||
         msg.includes('booking pannu') || msg.match(/\bbook\b/)) {
         bookingState.step = "choose_location";
+        window._customSpeech = lang === 'ta' ? "மெயின் கேட், கேட் 1, கேட் 3" : "Main Gate, Gate 1, Gate 3";
         const prompt = lang === 'ta'
             ? `🅿️ ஸ்லாட் பதிவு! எந்த இடத்தை தேர்வு செய்கிறீர்கள்? 👇`
             : `🅿️ Let's book a slot! Select your location 👇`;
@@ -982,6 +993,7 @@ function createChatbotUI() {
 
         // Get bot response
         setTimeout(async () => {
+            window._customSpeech = null;
             const botResponse = await getBotResponse(message);
 
             // Remove typing indicator
@@ -1001,8 +1013,9 @@ function createChatbotUI() {
             chatMessages.insertAdjacentHTML('beforeend', botMessageHTML);
             chatMessages.scrollTop = chatMessages.scrollHeight;
 
-            // Speak the response in the detected language
-            speak(botResponse);
+            // Speak the response in the detected language (using custom speech if set, else stripped text)
+            const speechText = window._customSpeech !== null ? window._customSpeech : botResponse.replace(/<[^>]+>/g, '');
+            speak(speechText);
         }, 600);
     }
 
@@ -1024,7 +1037,7 @@ function createChatbotUI() {
     }
 
     // ─── Add bot message helper (for click-triggered responses) ────────────
-    function addBotMessage(text) {
+    function addBotMessage(text, speechText = null) {
         const chatMessages = document.getElementById('chat-messages');
         const langLabel = window.currentLang === 'ta' ? '🟡 Tamil' : '🔵 English';
         const botMessageHTML = `
@@ -1037,6 +1050,9 @@ function createChatbotUI() {
         `;
         chatMessages.insertAdjacentHTML('beforeend', botMessageHTML);
         chatMessages.scrollTop = chatMessages.scrollHeight;
+        if (speechText) {
+            speak(speechText);
+        }
     }
 
     // Handle quick reply buttons
@@ -1059,7 +1075,7 @@ function createChatbotUI() {
             const msg = lang === 'ta'
                 ? `🅿️ ஸ்லாட் ${bookingState.slot.number} தேர்வு செய்யப்பட்டது!\n\n👤 உங்கள் பெயரை உள்ளிடவும்:`
                 : `🅿️ Slot ${bookingState.slot.number} selected!\n\n👤 Enter your name:`;
-            addBotMessage(msg);
+            addBotMessage(msg, lang === 'ta' ? "உங்கள் பெயரை உள்ளிடவும்" : "Enter your name");
         }
     });
 
@@ -1072,12 +1088,12 @@ function createChatbotUI() {
             bookingState.locationName = name;
             bookingState.step = 'choose_slot';
             const lang = window.currentLang;
-            addBotMessage(lang === 'ta' ? '⏳ ஸ்லாட்டுகளை பெறுகிறது...' : '⏳ Fetching available slots...');
+            addBotMessage(lang === 'ta' ? '⏳ ஸ்லாட்டுகளை பெறுகிறது...' : '⏳ Fetching available slots...', null);
             const slotsHTML = await showAvailableSlots(loc);
             const header = lang === 'ta'
                 ? `📍 ${name} — காலியான ஸ்லாட்டுகள்:`
                 : `📍 ${name} — Available slots:`;
-            addBotMessage(`${header}\n${slotsHTML}`);
+            addBotMessage(`${header}\n${slotsHTML}`, lang === 'ta' ? "ஒரு ஸ்லாட்டை தேர்ந்தெடுக்கவும்:" : "Select a slot:");
         }
     });
 
