@@ -24,9 +24,15 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
+// Flag to prevent auto-signout during manual login
+let isManualLogin = false;
+
 // 🔥 AUTO REDIRECT (runs on page load)
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
     if (user) {
+        // Don't interfere during an active manual login
+        if (isManualLogin) return;
+
         // Check if user signed up with email/password and hasn't verified email
         const isEmailPasswordUser = user.providerData.some(p => p.providerId === 'password');
         if (isEmailPasswordUser && !user.emailVerified) {
@@ -34,12 +40,14 @@ onAuthStateChanged(auth, (user) => {
             return;
         }
 
-        // Already logged in & verified → go to dashboard
+        // Admin must always login manually — sign them out on the login page
         if (user.email === 'koushik4680@gmail.com') {
-            window.location.href = 'admin-dashboard.html';
-        } else {
-            window.location.href = 'locations.html';
+            await signOut(auth);
+            return;
         }
+
+        // Regular users → auto-redirect to dashboard
+        window.location.href = 'locations.html';
     }
 });
 
@@ -106,6 +114,7 @@ loginForm.addEventListener('submit', async function (e) {
     setLoading(loginBtn, true);
 
     try {
+        isManualLogin = true;
         await setPersistence(auth, browserLocalPersistence);
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
@@ -155,6 +164,7 @@ loginForm.addEventListener('submit', async function (e) {
         }
 
         showAlert(errorMessage, 'error');
+        isManualLogin = false;
         loginBtn.textContent = 'Login';
         loginBtn.disabled = false;
         loginBtn.style.opacity = '1';
@@ -189,6 +199,7 @@ googleBtn.addEventListener('click', async function () {
     setLoading(this, true);
 
     try {
+        isManualLogin = true;
         const result = await signInWithPopup(auth, googleProvider);
         showAlert('Google sign-in successful! Redirecting...', 'success');
 
@@ -214,6 +225,7 @@ googleBtn.addEventListener('click', async function () {
         }
 
         showAlert(errorMessage, 'error');
+        isManualLogin = false;
         this.innerHTML = originalContent;
         this.disabled = false;
         this.style.opacity = '1';

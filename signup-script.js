@@ -23,7 +23,7 @@ const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
 // 🔥 AUTO REDIRECT (runs on page load)
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
     if (user) {
         // Check if user signed up with email/password and hasn't verified email
         const isEmailPasswordUser = user.providerData.some(p => p.providerId === 'password');
@@ -32,12 +32,14 @@ onAuthStateChanged(auth, (user) => {
             return;
         }
 
-        // Already logged in & verified → go to dashboard
+        // Admin must always login manually — sign them out
         if (user.email === 'koushik4680@gmail.com') {
-            window.location.href = 'admin-dashboard.html';
-        } else {
-            window.location.href = 'locations.html';
+            await signOut(auth);
+            return;
         }
+
+        // Regular users → auto-redirect to dashboard
+        window.location.href = 'locations.html';
     }
 });
 
