@@ -121,7 +121,7 @@ loginForm.addEventListener('submit', async function (e) {
                 setTimeout(() => { window.location.href = 'locations.html'; }, 1500);
             }
         } else {
-            showAlert('Please verify your email first. Check your inbox for the verification link.', 'warning');
+            showAlert('Please verify your email first. Check your spam folder for the verification link.', 'warning');
             loginBtn.textContent = 'Login';
             loginBtn.disabled = false;
             loginBtn.style.opacity = '1';

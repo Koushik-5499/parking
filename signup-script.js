@@ -41,7 +41,7 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
-function showAlert(message, type) {
+function showAlert(message, type, onDismiss) {
     const existing = document.querySelector('.auth-alert');
     if (existing) existing.remove();
 
@@ -55,11 +55,11 @@ function showAlert(message, type) {
     const form = document.querySelector('.signup-form');
     form.insertBefore(alertDiv, form.firstChild);
 
-    if (type === 'success') {
-        setTimeout(() => alertDiv.remove(), 8000);
-    } else {
-        setTimeout(() => alertDiv.remove(), 5000);
-    }
+    const duration = type === 'success' ? 8000 : 5000;
+    setTimeout(() => {
+        alertDiv.remove();
+        if (onDismiss) onDismiss();
+    }, duration);
 }
 
 const togglePassword = document.getElementById('togglePassword');
@@ -103,16 +103,13 @@ signupForm.addEventListener('submit', async function (e) {
         // Sign out the user immediately so they can't bypass email verification
         await signOut(auth);
 
-        showAlert('Account created! Check your email for verification. After verifying, you can login.', 'success');
+        showAlert('Account created! Check your email for verification. After verifying, you can login.', 'success', () => {
+            window.location.href = 'index.html';
+        });
 
         signupBtn.textContent = 'Sign Up';
         signupBtn.disabled = false;
         signupBtn.style.opacity = '1';
-
-        // Redirect to login page after popup disappears
-        setTimeout(() => {
-            window.location.href = 'index.html';
-        }, 8000);
 
     } catch (error) {
         let errorMessage = error.message;
