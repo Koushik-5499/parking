@@ -545,6 +545,79 @@
                 font-size: 44px;
             }
         }
+        /* ===== Expiry Warning Notification ===== */
+        .expiry-notification {
+            position: fixed;
+            top: -120px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 92%;
+            max-width: 500px;
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 50%, #f87171 100%);
+            color: white;
+            padding: 16px 20px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(239, 68, 68, 0.5), 0 0 0 1px rgba(255,255,255,0.1) inset;
+            z-index: 10000;
+            transition: top 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .expiry-notification.show {
+            top: 20px;
+        }
+
+        .expiry-notification .notif-icon {
+            font-size: 28px;
+            animation: notifBell 1s ease-in-out infinite;
+            flex-shrink: 0;
+        }
+
+        @keyframes notifBell {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(15deg); }
+            50% { transform: rotate(-15deg); }
+            75% { transform: rotate(10deg); }
+        }
+
+        .expiry-notification .notif-content {
+            flex: 1;
+        }
+
+        .expiry-notification .notif-title {
+            font-weight: 800;
+            font-size: 15px;
+            margin-bottom: 3px;
+            letter-spacing: 0.3px;
+        }
+
+        .expiry-notification .notif-msg {
+            font-size: 13px;
+            opacity: 0.9;
+            line-height: 1.4;
+        }
+
+        .expiry-notification .notif-close {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: background 0.2s;
+        }
+
+        .expiry-notification .notif-close:hover {
+            background: rgba(255,255,255,0.35);
+        }
     </style>
 </head>
 
@@ -684,6 +757,16 @@
             </div>
             <button id="profileLogoutBtn" class="sign-out-btn">Sign Out</button>
         </div>
+    </div>
+
+    <!-- Expiry Warning Notification -->
+    <div id="expiryNotification" class="expiry-notification">
+        <div class="notif-icon">🔔</div>
+        <div class="notif-content">
+            <div class="notif-title">Reservation Expiring Soon!</div>
+            <div class="notif-msg" id="expiryNotifMsg">Your slot reservation will expire in 5 minutes. Please check in at the gate.</div>
+        </div>
+        <button class="notif-close" onclick="dismissExpiryNotification()">✕</button>
     </div>
 
     <!-- Bottom Navigation -->

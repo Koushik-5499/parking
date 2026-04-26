@@ -10,6 +10,7 @@ import {
     query,
     where,
     getDocs,
+    onSnapshot,
     doc,
     getDoc,
     updateDoc,
@@ -124,6 +125,7 @@ window.switchTab = function (tabName) {
 
 // ===== Reservation Timer =====
 let bookingTimerInterval = null;
+let expiryNotifShown = false;
 
 function clearBookingTimer() {
     if (bookingTimerInterval) {
@@ -132,9 +134,60 @@ function clearBookingTimer() {
     }
 }
 
+// Notification helpers
+function showExpiryNotification(minsLeft) {
+    const notif = document.getElementById('expiryNotification');
+    const msgEl = document.getElementById('expiryNotifMsg');
+    if (!notif) return;
+
+    if (minsLeft <= 0) {
+        msgEl.textContent = 'Your slot reservation has expired!';
+    } else if (minsLeft < 1) {
+        msgEl.textContent = 'Your slot reservation expires in less than 1 minute! Check in now.';
+    } else {
+        msgEl.textContent = `Your slot reservation will expire in ${Math.ceil(minsLeft)} minute${Math.ceil(minsLeft) !== 1 ? 's' : ''}. Please check in at the gate.`;
+    }
+
+    notif.classList.add('show');
+
+    // Play notification sound
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const playBeep = (freq, startTime, duration) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.frequency.value = freq;
+            osc.type = 'sine';
+            gain.gain.setValueAtTime(0.3, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+            osc.start(startTime);
+            osc.stop(startTime + duration);
+        };
+        const now = audioCtx.currentTime;
+        playBeep(880, now, 0.15);
+        playBeep(1100, now + 0.18, 0.15);
+        playBeep(880, now + 0.36, 0.2);
+    } catch (e) { /* Audio not supported */ }
+
+    // Auto-switch to booking tab so user sees the timer
+    const bookingSection = document.getElementById('booking-section');
+    if (bookingSection && !bookingSection.classList.contains('active')) {
+        switchTab('booking');
+    }
+}
+
+window.dismissExpiryNotification = function () {
+    const notif = document.getElementById('expiryNotification');
+    if (notif) notif.classList.remove('show');
+};
+
 function startBookingTimer(bookingTime) {
     clearBookingTimer();
+    expiryNotifShown = false;
     const RESERVATION_DURATION = 1800000; // 30 minutes
+    const WARNING_THRESHOLD = 300000; // 5 minutes
 
     function updateTimer() {
         const now = Date.now();
@@ -154,6 +207,7 @@ function startBookingTimer(bookingTime) {
             progressEl.style.width = '0%';
             progressEl.classList.add('low');
             clearBookingTimer();
+            showExpiryNotification(0);
             // Refresh booking after expiry
             setTimeout(() => loadMyActiveBooking(), 2000);
             return;
@@ -168,6 +222,25 @@ function startBookingTimer(bookingTime) {
         const pct = (remaining / RESERVATION_DURATION) * 100;
         progressEl.style.width = `${pct}%`;
 
+        // Show warning notification when 5 minutes or less remain
+        if (remaining <= WARNING_THRESHOLD && !expiryNotifShown) {
+            expiryNotifShown = true;
+            showExpiryNotification(remaining / 60000);
+        }
+
+        // Update notification message in real-time if visible
+        if (expiryNotifShown && remaining > 0) {
+            const notifMsg = document.getElementById('expiryNotifMsg');
+            if (notifMsg) {
+                const minsLeft = remaining / 60000;
+                if (minsLeft < 1) {
+                    notifMsg.textContent = `Expiring in ${secs} second${secs !== 1 ? 's' : ''}! Check in now!`;
+                } else {
+                    notifMsg.textContent = `Your slot reservation will expire in ${mins} min ${secs}s. Please check in at the gate.`;
+                }
+            }
+        }
+
         if (pct < 20) {
             digitsEl.classList.add('expired');
             progressEl.classList.add('low');
@@ -181,146 +254,184 @@ function startBookingTimer(bookingTime) {
     bookingTimerInterval = setInterval(updateTimer, 1000);
 }
 
-// ===== Load My Active Booking =====
-async function loadMyActiveBooking() {
+// ===== Load My Active Booking (Real-time) =====
+let activeBookingUnsubscribers = [];
+
+function loadMyActiveBooking() {
     const container = document.getElementById('myBookingContent');
     if (!currentUser) return;
 
     clearBookingTimer();
 
-    try {
-        let activeBooking = null;
-        const locations = ['rathinam_main_gate', 'rathinam_gate1', 'rathinam_gate3'];
+    // Clean up any previous listeners
+    activeBookingUnsubscribers.forEach(unsub => unsub());
+    activeBookingUnsubscribers = [];
 
-        for (const loc of locations) {
-            const slotsRef = collection(db, 'parking_locations', loc, 'slots');
-            const q = query(slotsRef, where('userEmail', '==', currentUser.email), limit(1));
-            const querySnapshot = await getDocs(q);
+    const locations = ['rathinam_main_gate', 'rathinam_gate1', 'rathinam_gate3'];
+
+    // Listen to all locations for the current user's active booking
+    locations.forEach(loc => {
+        const slotsRef = collection(db, 'parking_locations', loc, 'slots');
+        const q = query(slotsRef, where('userEmail', '==', currentUser.email), limit(1));
+
+        const unsub = onSnapshot(q, (querySnapshot) => {
+            let foundBooking = null;
 
             querySnapshot.forEach(docSnap => {
                 const data = docSnap.data();
                 if (data.status === 'pending' || data.status === 'occupied') {
-                    activeBooking = { id: docSnap.id, locationId: loc, ...data };
+                    foundBooking = { id: docSnap.id, locationId: loc, ...data };
                 }
             });
-            if (activeBooking) break;
-        }
 
-        if (activeBooking) {
-            let locName = activeBooking.locationId;
-            if (locName === 'rathinam_main_gate') locName = 'Rathinam Main Gate';
-            else if (locName === 'rathinam_gate1') locName = 'Rathinam Gate 1';
-            else if (locName === 'rathinam_gate3') locName = 'Rathinam Gate 3';
-
-            const qrCodeId = activeBooking.qrCode || activeBooking.bookingId || '';
-
-            // Build reservation timer HTML (only for pending status with bookingTime)
-            let timerHTML = '';
-            if (activeBooking.status === 'pending' && activeBooking.bookingTime) {
-                timerHTML = `
-                    <div class="reservation-timer-section">
-                        <div class="reservation-timer-label">RESERVATION TIMER</div>
-                        <div class="reservation-timer-card">
-                            <div class="timer-digits" id="bookingTimerDigits">-- : --</div>
-                            <div class="timer-progress-container">
-                                <div class="timer-progress-bar" id="bookingTimerProgress" style="width: 100%;"></div>
-                            </div>
-                            <div class="timer-hint">Slot auto-releases at expiry<span>·</span>5-min cooldown follows</div>
-                        </div>
-                    </div>
-                `;
+            if (foundBooking) {
+                renderActiveBooking(foundBooking);
+            } else {
+                // Check if ANY location has an active booking before showing empty
+                checkAllLocationsForBooking();
             }
+        });
 
-            // Build status badge
-            let statusBadge = '';
-            if (activeBooking.status === 'pending') {
-                statusBadge = `<span style="display: inline-flex; align-items: center; gap: 6px; background: rgba(245, 158, 11, 0.15); color: #f59e0b; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;"><i class="fas fa-hourglass-half"></i> RESERVED</span>`;
-            } else if (activeBooking.status === 'occupied') {
-                statusBadge = `<span style="display: inline-flex; align-items: center; gap: 6px; background: rgba(34, 197, 94, 0.15); color: #22c55e; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;"><i class="fas fa-car"></i> CHECKED IN</span>`;
+        activeBookingUnsubscribers.push(unsub);
+    });
+}
+
+async function checkAllLocationsForBooking() {
+    if (!currentUser) return;
+    const container = document.getElementById('myBookingContent');
+    const locations = ['rathinam_main_gate', 'rathinam_gate1', 'rathinam_gate3'];
+
+    for (const loc of locations) {
+        const slotsRef = collection(db, 'parking_locations', loc, 'slots');
+        const q = query(slotsRef, where('userEmail', '==', currentUser.email), limit(1));
+        const querySnapshot = await getDocs(q);
+
+        let found = false;
+        querySnapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            if (data.status === 'pending' || data.status === 'occupied') {
+                found = true;
             }
+        });
+        if (found) return; // Another listener will render it
+    }
 
-            container.innerHTML = `
-                <div class="card" style="text-align: center; padding: 30px 25px;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; text-align: left;">
-                        <div>
-                            <h2 style="color: #1e1b4b; margin-bottom: 4px; font-size: 22px; font-weight: 800; font-family: 'Courier New', monospace;">Slot ${activeBooking.slotNumber}</h2>
-                            <p style="color: #6b7280; font-size: 13px;">${locName}</p>
-                        </div>
-                        ${statusBadge}
+    // No active booking found in any location
+    clearBookingTimer();
+    container.innerHTML = `
+        <div style="text-align: center; padding: 50px 20px; color: #e8eaeeff;">
+            <i class="fas fa-car" style="font-size: 48px; margin-bottom: 20px; opacity: 0.3;"></i>
+            <p>You don't have any active bookings.</p>
+            <button class="btn-primary-action" style="margin-top: 20px;" onclick="switchTab('slots')">Book Now</button>
+        </div>
+    `;
+}
+
+function renderActiveBooking(activeBooking) {
+    const container = document.getElementById('myBookingContent');
+    clearBookingTimer();
+    let locName = activeBooking.locationId;
+    if (locName === 'rathinam_main_gate') locName = 'Rathinam Main Gate';
+    else if (locName === 'rathinam_gate1') locName = 'Rathinam Gate 1';
+    else if (locName === 'rathinam_gate3') locName = 'Rathinam Gate 3';
+
+    const qrCodeId = activeBooking.qrCode || activeBooking.bookingId || '';
+
+    // Build reservation timer HTML (only for pending status with bookingTime)
+    let timerHTML = '';
+    if (activeBooking.status === 'pending' && activeBooking.bookingTime) {
+        timerHTML = `
+            <div class="reservation-timer-section">
+                <div class="reservation-timer-label">RESERVATION TIMER</div>
+                <div class="reservation-timer-card">
+                    <div class="timer-digits" id="bookingTimerDigits">-- : --</div>
+                    <div class="timer-progress-container">
+                        <div class="timer-progress-bar" id="bookingTimerProgress" style="width: 100%;"></div>
                     </div>
-
-                    ${timerHTML}
-
-                    <div style="background: linear-gradient(135deg, rgba(102,126,234,0.06) 0%, rgba(118,75,162,0.06) 100%); border: 1px solid rgba(124,58,237,0.08); padding: 25px 20px; border-radius: 14px; margin-bottom: 20px;">
-                        <p style="font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #7c3aed; margin-bottom: 15px;">QR ENTRY / EXIT PASS</p>
-                        <div id="bookingQrCode" style="display: flex; justify-content: center; margin: 0 auto 15px;"></div>
-                        <p style="font-size: 12px; color: #9ca3af; margin-bottom: 8px;">Show to admin at gate<span style="margin: 0 4px;">·</span>Billing starts on entry scan</p>
-                        <p style="font-size: 12px; color: #d1d5db; font-family: monospace; word-break: break-all;">${qrCodeId.substring(0, 16)}${qrCodeId.length > 16 ? '...' : ''}</p>
-                    </div>
-
-                    <div style="background: linear-gradient(135deg, rgba(102,126,234,0.06) 0%, rgba(118,75,162,0.06) 100%); padding: 20px; border-radius: 12px; border: 1px solid rgba(124,58,237,0.08); text-align: left;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                            <div>
-                                <p style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Name</p>
-                                <p style="font-size: 14px; color: #1e1b4b; font-weight: 600;">${activeBooking.bookedBy || 'N/A'}</p>
-                            </div>
-                            <div>
-                                <p style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Vehicle</p>
-                                <p style="font-size: 14px; color: #1e1b4b; font-weight: 600;">${activeBooking.vehicleNumber || 'N/A'}</p>
-                            </div>
-                            <div>
-                                <p style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Location</p>
-                                <p style="font-size: 14px; color: #1e1b4b; font-weight: 600;">${locName}</p>
-                            </div>
-                            <div>
-                                <p style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Slot</p>
-                                <p style="font-size: 14px; color: #1e1b4b; font-weight: 600;">${activeBooking.slotNumber}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button onclick="window.selectLocation('${activeBooking.locationId}', '${locName}')" class="btn-primary-action" style="width: 100%; margin-top: 20px;">
-                        <i class="fas fa-eye"></i> View Slot Dashboard
-                    </button>
-
-                    <div id="payBtnContainer"></div>
+                    <div class="timer-hint">Slot auto-releases at expiry<span>·</span>5-min cooldown follows</div>
                 </div>
-            `;
+            </div>
+        `;
+    }
 
-            // Generate QR code
-            setTimeout(() => {
-                const qrContainer = document.getElementById('bookingQrCode');
-                if (qrContainer && qrCodeId) {
-                    qrContainer.innerHTML = '';
-                    new QRCode(qrContainer, {
-                        text: qrCodeId,
-                        width: 200,
-                        height: 200,
-                        colorDark: "#000000",
-                        colorLight: "#ffffff",
-                        correctLevel: QRCode.CorrectLevel.H
-                    });
-                }
-            }, 100);
+    // Build status badge
+    let statusBadge = '';
+    if (activeBooking.status === 'pending') {
+        statusBadge = `<span style="display: inline-flex; align-items: center; gap: 6px; background: rgba(245, 158, 11, 0.15); color: #f59e0b; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;"><i class="fas fa-hourglass-half"></i> RESERVED</span>`;
+    } else if (activeBooking.status === 'occupied') {
+        statusBadge = `<span style="display: inline-flex; align-items: center; gap: 6px; background: rgba(34, 197, 94, 0.15); color: #22c55e; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;"><i class="fas fa-car"></i> CHECKED IN</span>`;
+    }
 
-            if (activeBooking.status === 'pending' && activeBooking.bookingTime) {
-                setTimeout(() => startBookingTimer(activeBooking.bookingTime), 150);
-            }
-
-            if (activeBooking.bookingId) {
-                checkPaymentEnabled(activeBooking.bookingId);
-            }
-        } else {
-            container.innerHTML = `
-                <div style="text-align: center; padding: 50px 20px; color: #e8eaeeff;">
-                    <i class="fas fa-car" style="font-size: 48px; margin-bottom: 20px; opacity: 0.3;"></i>
-                    <p>You don't have any active bookings.</p>
-                    <button class="btn-primary-action" style="margin-top: 20px;" onclick="switchTab('slots')">Book Now</button>
+    container.innerHTML = `
+        <div class="card" style="text-align: center; padding: 30px 25px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; text-align: left;">
+                <div>
+                    <h2 style="color: #1e1b4b; margin-bottom: 4px; font-size: 22px; font-weight: 800; font-family: 'Courier New', monospace;">Slot ${activeBooking.slotNumber}</h2>
+                    <p style="color: #6b7280; font-size: 13px;">${locName}</p>
                 </div>
-            `;
+                ${statusBadge}
+            </div>
+
+            ${timerHTML}
+
+            <div style="background: linear-gradient(135deg, rgba(102,126,234,0.06) 0%, rgba(118,75,162,0.06) 100%); border: 1px solid rgba(124,58,237,0.08); padding: 25px 20px; border-radius: 14px; margin-bottom: 20px;">
+                <p style="font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #7c3aed; margin-bottom: 15px;">QR ENTRY / EXIT PASS</p>
+                <div id="bookingQrCode" style="display: flex; justify-content: center; margin: 0 auto 15px;"></div>
+                <p style="font-size: 12px; color: #9ca3af; margin-bottom: 8px;">Show to admin at gate<span style="margin: 0 4px;">·</span>Billing starts on entry scan</p>
+                <p style="font-size: 12px; color: #d1d5db; font-family: monospace; word-break: break-all;">${qrCodeId.substring(0, 16)}${qrCodeId.length > 16 ? '...' : ''}</p>
+            </div>
+
+            <div style="background: linear-gradient(135deg, rgba(102,126,234,0.06) 0%, rgba(118,75,162,0.06) 100%); padding: 20px; border-radius: 12px; border: 1px solid rgba(124,58,237,0.08); text-align: left;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                        <p style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Name</p>
+                        <p style="font-size: 14px; color: #1e1b4b; font-weight: 600;">${activeBooking.bookedBy || 'N/A'}</p>
+                    </div>
+                    <div>
+                        <p style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Vehicle</p>
+                        <p style="font-size: 14px; color: #1e1b4b; font-weight: 600;">${activeBooking.vehicleNumber || 'N/A'}</p>
+                    </div>
+                    <div>
+                        <p style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Location</p>
+                        <p style="font-size: 14px; color: #1e1b4b; font-weight: 600;">${locName}</p>
+                    </div>
+                    <div>
+                        <p style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Slot</p>
+                        <p style="font-size: 14px; color: #1e1b4b; font-weight: 600;">${activeBooking.slotNumber}</p>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="window.selectLocation('${activeBooking.locationId}', '${locName}')" class="btn-primary-action" style="width: 100%; margin-top: 20px;">
+                <i class="fas fa-eye"></i> View Slot Dashboard
+            </button>
+
+            <div id="payBtnContainer"></div>
+        </div>
+    `;
+
+    // Generate QR code
+    setTimeout(() => {
+        const qrContainer = document.getElementById('bookingQrCode');
+        if (qrContainer && qrCodeId) {
+            qrContainer.innerHTML = '';
+            new QRCode(qrContainer, {
+                text: qrCodeId,
+                width: 200,
+                height: 200,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
         }
-    } catch (error) {
-        console.error('Error loading active booking:', error);
+    }, 100);
+
+    if (activeBooking.status === 'pending' && activeBooking.bookingTime) {
+        setTimeout(() => startBookingTimer(activeBooking.bookingTime), 150);
+    }
+
+    if (activeBooking.bookingId) {
+        checkPaymentEnabled(activeBooking.bookingId);
     }
 }
 
