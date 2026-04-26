@@ -328,11 +328,11 @@ async function getBotResponse(userMessage) {
         // Automatically convert to uppercase and remove spaces/symbols
         const vehicleInput = userMessage.toUpperCase().replace(/[^A-Z0-9]/g, '');
 
-        if (!/^[A-Z]{2}[0-9]{2}[A-Z]{2}[0-9]{4}$/.test(vehicleInput)) {
+        if (!/^[A-Z]{2}[0-9]{2}[A-Z0-9]+$/.test(vehicleInput)) {
             window._customSpeech = lang === 'ta' ? "சரியான வாகன எண்ணை உள்ளிடவும்" : "Please enter a valid vehicle number";
             return lang === 'ta'
-                ? `❌ தவறான வாகன எண்.\n🚗 தயவுசெய்து சரியான வாகன எண்ணை உள்ளிடவும் (எ.கா: TN01AB1234):`
-                : `❌ Invalid vehicle number.\n🚗 Please enter a valid vehicle number format: (e.g. TN01AB1234):`;
+                ? `❌ தவறான வாகன எண்.\n🚗 தயவுசெய்து சரியான வாகன எண்ணை உள்ளிடவும்:`
+                : `❌ Invalid vehicle number.\n🚗 Please enter a valid vehicle number:`;
         }
 
         bookingState.vehicle = vehicleInput;
