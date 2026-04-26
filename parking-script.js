@@ -27,7 +27,14 @@ const googleProvider = new GoogleAuthProvider();
 // 🔥 AUTO REDIRECT (runs on page load)
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        // Already logged in → go to dashboard
+        // Check if user signed up with email/password and hasn't verified email
+        const isEmailPasswordUser = user.providerData.some(p => p.providerId === 'password');
+        if (isEmailPasswordUser && !user.emailVerified) {
+            // Don't auto-redirect unverified email/password users
+            return;
+        }
+
+        // Already logged in & verified → go to dashboard
         if (user.email === 'koushik4680@gmail.com') {
             window.location.href = 'admin-dashboard.html';
         } else {

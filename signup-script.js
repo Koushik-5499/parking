@@ -3,6 +3,7 @@ import {
     getAuth,
     createUserWithEmailAndPassword,
     sendEmailVerification,
+    signOut,
     GoogleAuthProvider,
     signInWithPopup,
     onAuthStateChanged
@@ -24,7 +25,14 @@ const googleProvider = new GoogleAuthProvider();
 // 🔥 AUTO REDIRECT (runs on page load)
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        // Already logged in → go to dashboard
+        // Check if user signed up with email/password and hasn't verified email
+        const isEmailPasswordUser = user.providerData.some(p => p.providerId === 'password');
+        if (isEmailPasswordUser && !user.emailVerified) {
+            // Don't auto-redirect unverified email/password users
+            return;
+        }
+
+        // Already logged in & verified → go to dashboard
         if (user.email === 'koushik4680@gmail.com') {
             window.location.href = 'admin-dashboard.html';
         } else {
@@ -91,7 +99,11 @@ signupForm.addEventListener('submit', async function (e) {
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         await sendEmailVerification(userCredential.user);
-        showAlert('Check your email for verification. If not found, check Spam/Junk folder.', 'success');
+
+        // Sign out the user immediately so they can't bypass email verification
+        await signOut(auth);
+
+        showAlert('Account created! Check your email for verification. After verifying, you can login.', 'success');
 
         signupBtn.textContent = 'Sign Up';
         signupBtn.disabled = false;

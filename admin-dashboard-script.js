@@ -56,6 +56,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Block unverified email/password users
+        const isEmailPasswordUser = user.providerData.some(p => p.providerId === 'password');
+        if (isEmailPasswordUser && !user.emailVerified) {
+            window.location.href = 'index.html';
+            return;
+        }
+
         if (user.email !== ADMIN_EMAIL) {
             alert('Access Denied: Admin only');
             window.location.href = 'locations.html';
