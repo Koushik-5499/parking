@@ -813,7 +813,7 @@ async function checkPaymentEnabled(bookingId) {
 
             document.getElementById('payNowBtn').addEventListener('click', function (e) {
                 e.preventDefault()
-                openPayment({ id: bookingId, amount: amount })
+                openPayment({ ...booking, id: bookingId, amount: amount })
             })
         }
     } catch (error) {
@@ -861,6 +861,7 @@ async function openPayment(booking) {
 
             if (data.success) {
                 try {
+                    // 1. Update Booking Status
                     await updateDoc(doc(db, 'bookings', booking.id), {
                         status: "paid",
                         paymentId: response.razorpay_payment_id,
@@ -869,14 +870,79 @@ async function openPayment(booking) {
 
                     const container = document.getElementById('payBtnContainer')
                     if (container) {
-                        container.innerHTML = '<div class="payment-success-badge" style="width: 100%; justify-content: center; margin-top: 20px; padding: 12px;"><i class="fas fa-check-circle"></i> PAYMENT COMPLETED</div>'
+                        container.innerHTML = '<div class="payment-success-badge" style="width: 100%; justify-content: center; margin-top: 20px; padding: 12px;"><i class="fas fa-check-circle"></i> PAYMENT COMPLETED & RECEIPT SENT!</div>'
                     }
-                } catch (error) {
-                    console.error("Booking update failed:", error)
-                }
+                    
+                    console.log("Payment verified and booking updated in Firestore.");
 
-                alert("Payment Verified ✅")
+                    // 2. Format details for email receipt
+                    const pDateObj = new Date();
+                    let eDateObj = booking.entryTime?.toDate ? booking.entryTime.toDate() : null;
+                    let exDateObj = booking.exitTime?.toDate ? booking.exitTime.toDate() : pDateObj;
+                
+                    if (!eDateObj) {
+                        let mins = booking.amount ? Math.round((booking.amount / 80) * 60) : 60;
+                        eDateObj = new Date(exDateObj.getTime() - mins * 60000);
+                    }
+                
+                    const fmtTime = (d) => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    const fmtDate = (d) => {
+                        const dd = String(d.getDate()).padStart(2, '0');
+                        const mm = String(d.getMonth() + 1).padStart(2, '0');
+                        const yy = String(d.getFullYear()).slice(-2);
+                        return `${dd}/${mm}/${yy}`;
+                    };
+                
+                    const entryStr = fmtTime(eDateObj);
+                    const exitStr = fmtTime(exDateObj);
+                    const durationMins = Math.max(1, Math.round((exDateObj - eDateObj) / 60000));
+                    const gatesMap = {
+                        'rathinam_main_gate': 'Rathinam Main Gate',
+                        'rathinam_gate1': 'Rathinam Gate 1',
+                        'rathinam_gate3': 'Rathinam Gate 3'
+                    };
+                    const gateName = booking.locationId ? (gatesMap[booking.locationId] || booking.locationId) : 'N/A';
+                    
+                    const receiptData = {
+                        bookingId: booking.id,
+                        date: fmtDate(eDateObj),
+                        location: gateName + ', Slot ' + (booking.slotNumber || 'N/A'),
+                        entry: entryStr,
+                        exit: exitStr,
+                        duration: durationMins + ' min',
+                        rate: '₹80/hr',
+                        amount: booking.amount,
+                        qrCode: booking.qrCode || booking.id
+                    };
+                    
+                    console.log("Triggering automated email delivery...", receiptData);
+                    
+                    // 3. Trigger Email API
+                    const emailResponse = await fetch('/api/send-email', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            to: currentUser.email,
+                            ...receiptData,
+                            qrImage: null // API handles QR now
+                        })
+                    });
+                    
+                    const emailResult = await emailResponse.json();
+                    if (emailResult.success) {
+                        console.log("✅ Automated email receipt sent successfully!");
+                        alert("Payment Verified & Receipt Sent to Email! ✅");
+                    } else {
+                        console.error("❌ Failed to send automated email receipt:", emailResult.error);
+                        alert("Payment Verified! ✅ (Email receipt failed to send)");
+                    }
+
+                } catch (error) {
+                    console.error("Booking update or email workflow failed:", error)
+                    alert("Payment Processed but encountered an error saving details.");
+                }
             } else {
+                console.error("Payment verification failed signature check:", data.error);
                 alert("Payment verification failed ❌")
             }
         }

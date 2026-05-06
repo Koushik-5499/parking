@@ -25,7 +25,13 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Recipient email is required" });
   }
 
+  if (!process.env.RESEND_API_KEY) {
+    console.error("FATAL ERROR: RESEND_API_KEY is missing from environment variables.");
+    return res.status(500).json({ error: "Server configuration error: Email service unavailable" });
+  }
+
   try {
+    console.log(`[Email API] Initiating receipt email to ${to} for booking ${bookingId}`);
     // Build the HTML email template
     const htmlContent = `
     <!DOCTYPE html>
@@ -170,16 +176,22 @@ export default async function handler(req, res) {
     </html>
     `;
 
-    await resend.emails.send({
+    const { data, error } = await resend.emails.send({
       from: "FastPark <noreply@fastpark.online>",
       to: to,
       subject: "Parking Receipt",
       html: htmlContent
     });
 
-    res.status(200).json({ success: true });
+    if (error) {
+      console.error("[Email API] Resend API rejected the request:", error);
+      return res.status(400).json({ error: error.message || "Failed to send email" });
+    }
+
+    console.log(`[Email API] ✅ Successfully delivered receipt to ${to}. Email ID:`, data?.id);
+    res.status(200).json({ success: true, id: data?.id });
   } catch (error) {
-    console.error("Email send error:", error);
+    console.error("[Email API] ❌ Internal Server Error during email dispatch:", error);
     res.status(500).json({ error: "Failed to send email" });
   }
 }

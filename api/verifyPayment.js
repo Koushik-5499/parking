@@ -6,7 +6,14 @@ export default async function handler(req, res) {
   }
 
   try {
+    if (!process.env.RAZORPAY_SECRET) {
+      console.error("[Payment API] FATAL ERROR: RAZORPAY_SECRET is missing.");
+      return res.status(500).json({ error: "Server configuration error: Payment verification unavailable" });
+    }
+
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body
+    
+    console.log(`[Payment API] Verifying payment for order ID: ${body.razorpay_order_id}`);
 
     const {
       razorpay_order_id,
@@ -22,8 +29,10 @@ export default async function handler(req, res) {
       .digest("hex")
 
     if (expectedSign === razorpay_signature) {
+      console.log(`[Payment API] ✅ Signature verified successfully for payment ${razorpay_payment_id}`);
       return res.status(200).json({ success: true })
     } else {
+      console.error(`[Payment API] ❌ Invalid signature detected for payment ${razorpay_payment_id}`);
       return res.status(400).json({ success: false, error: "Invalid signature" })
     }
   } catch (err) {
