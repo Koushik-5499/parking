@@ -1,0 +1,808 @@
+/* ═══════════════════════════════════════════════════════════════
+   FASTPARK Parking Simulator - Styles
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Simulator Modal Overlay ──────────────────────────────────── */
+#simulator-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: #0a0a1a;
+    z-index: 100000;
+    display: none;
+    flex-direction: column;
+    font-family: 'Segoe UI', 'Inter', sans-serif;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+#simulator-overlay.active {
+    display: flex;
+}
+
+/* ── Loading Screen ───────────────────────────────────────────── */
+.sim-loading {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, #0a0a2e 0%, #1a0a3e 50%, #0a1a3e 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: opacity 0.8s ease;
+}
+
+.sim-loading.fade-out {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.sim-loading-logo {
+    font-size: 48px;
+    font-weight: 900;
+    margin-bottom: 10px;
+    letter-spacing: 2px;
+}
+
+.sim-loading-logo .fast { color: #fff; }
+.sim-loading-logo .park {
+    background: linear-gradient(135deg, #7c3aed, #a855f7, #c084fc);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.sim-loading-sub {
+    color: #a78bfa;
+    font-size: 14px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 40px;
+}
+
+.sim-loading-bar-wrap {
+    width: 280px;
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 15px;
+}
+
+.sim-loading-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #7c3aed, #a855f7, #c084fc);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.sim-loading-text {
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.sim-loading-car {
+    font-size: 60px;
+    margin-bottom: 20px;
+    animation: simCarBounce 1.5s ease-in-out infinite;
+}
+
+@keyframes simCarBounce {
+    0%, 100% { transform: translateY(0) rotate(-2deg); }
+    50% { transform: translateY(-15px) rotate(2deg); }
+}
+
+/* ── Game Canvas Area ─────────────────────────────────────────── */
+.sim-game-area {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: #1a1a2e;
+}
+
+#simCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: #2d2d44;
+}
+
+/* ── Top HUD Bar ──────────────────────────────────────────────── */
+.sim-hud-top {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 12px 16px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, transparent 100%);
+    z-index: 5;
+    pointer-events: none;
+}
+
+.sim-hud-top > * { pointer-events: auto; }
+
+.sim-hud-left, .sim-hud-right {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.sim-hud-badge {
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(124,58,237,0.3);
+    border-radius: 10px;
+    padding: 6px 12px;
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.sim-hud-badge .val {
+    color: #a855f7;
+    font-weight: 800;
+    font-family: 'Courier New', monospace;
+}
+
+.sim-hud-badge.timer .val { color: #fbbf24; }
+.sim-hud-badge.score .val { color: #34d399; }
+
+/* ── Speed Meter ──────────────────────────────────────────────── */
+.sim-speedometer {
+    position: absolute;
+    bottom: 120px;
+    left: 16px;
+    width: 100px;
+    height: 100px;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(124,58,237,0.4);
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+}
+
+.sim-speed-val {
+    font-size: 28px;
+    font-weight: 900;
+    color: #a855f7;
+    font-family: 'Courier New', monospace;
+    line-height: 1;
+}
+
+.sim-speed-unit {
+    font-size: 10px;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* ── Gear Indicator ───────────────────────────────────────────── */
+.sim-gear-indicator {
+    position: absolute;
+    bottom: 120px;
+    left: 130px;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(124,58,237,0.3);
+    border-radius: 12px;
+    padding: 8px 14px;
+    z-index: 5;
+    text-align: center;
+}
+
+.sim-gear-label {
+    font-size: 9px;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.sim-gear-val {
+    font-size: 24px;
+    font-weight: 900;
+    color: #34d399;
+    font-family: 'Courier New', monospace;
+}
+
+.sim-gear-val.reverse { color: #f87171; }
+
+/* ── Damage & Fuel Bars ───────────────────────────────────────── */
+.sim-bars {
+    position: absolute;
+    top: 60px;
+    right: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 5;
+    min-width: 120px;
+}
+
+.sim-bar-item {
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(10px);
+    border-radius: 8px;
+    padding: 6px 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.sim-bar-label {
+    font-size: 9px;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 3px;
+}
+
+.sim-bar-track {
+    width: 100%;
+    height: 5px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.sim-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.sim-bar-fill.fuel { background: linear-gradient(90deg, #22c55e, #4ade80); }
+.sim-bar-fill.damage { background: linear-gradient(90deg, #ef4444, #f87171); }
+
+/* ── Parking Sensor ───────────────────────────────────────────── */
+.sim-sensor {
+    position: absolute;
+    bottom: 230px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 4px;
+    z-index: 5;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sim-sensor.active { opacity: 1; }
+
+.sim-sensor-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #22c55e;
+    transition: background 0.2s ease;
+}
+
+.sim-sensor-dot.warn { background: #fbbf24; }
+.sim-sensor-dot.danger { background: #ef4444; animation: sensorBlink 0.3s infinite; }
+
+@keyframes sensorBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+/* ── Mobile Controls ──────────────────────────────────────────── */
+.sim-controls {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 110px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: linear-gradient(0deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 80%, transparent 100%);
+    z-index: 5;
+}
+
+.sim-ctrl-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.sim-ctrl-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.08);
+    color: white;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+.sim-ctrl-btn:active, .sim-ctrl-btn.pressed {
+    transform: scale(0.9);
+    background: rgba(124,58,237,0.4);
+    border-color: #a855f7;
+}
+
+.sim-ctrl-btn.gas {
+    background: rgba(34,197,94,0.2);
+    border-color: rgba(34,197,94,0.4);
+    width: 64px;
+    height: 64px;
+    font-size: 24px;
+}
+.sim-ctrl-btn.gas:active, .sim-ctrl-btn.gas.pressed {
+    background: rgba(34,197,94,0.5);
+    border-color: #22c55e;
+}
+
+.sim-ctrl-btn.brake {
+    background: rgba(239,68,68,0.2);
+    border-color: rgba(239,68,68,0.4);
+    width: 64px;
+    height: 64px;
+    font-size: 24px;
+}
+.sim-ctrl-btn.brake:active, .sim-ctrl-btn.brake.pressed {
+    background: rgba(239,68,68,0.5);
+    border-color: #ef4444;
+}
+
+.sim-ctrl-btn.nitro {
+    background: rgba(59,130,246,0.2);
+    border-color: rgba(59,130,246,0.4);
+}
+.sim-ctrl-btn.nitro:active, .sim-ctrl-btn.nitro.pressed {
+    background: rgba(59,130,246,0.5);
+    border-color: #3b82f6;
+    box-shadow: 0 0 20px rgba(59,130,246,0.5);
+}
+
+.sim-ctrl-btn.horn {
+    background: rgba(251,191,36,0.2);
+    border-color: rgba(251,191,36,0.4);
+}
+
+/* ── Steering Wheel ───────────────────────────────────────────── */
+.sim-steering-area {
+    position: absolute;
+    bottom: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+    display: none;
+}
+
+.sim-steering-wheel {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    border: 6px solid rgba(255,255,255,0.3);
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.1s ease;
+}
+
+.sim-steering-inner {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(124,58,237,0.5);
+    border: 2px solid #a855f7;
+}
+
+/* ── Close Button ─────────────────────────────────────────────── */
+.sim-close-btn {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(239,68,68,0.2);
+    border: 2px solid rgba(239,68,68,0.4);
+    color: #f87171;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: all 0.2s ease;
+}
+
+.sim-close-btn:hover {
+    background: rgba(239,68,68,0.5);
+    border-color: #ef4444;
+}
+
+/* ── Target Slot Indicator ────────────────────────────────────── */
+.sim-target-msg {
+    position: absolute;
+    top: 55px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(251,191,36,0.4);
+    border-radius: 12px;
+    padding: 8px 20px;
+    color: #fbbf24;
+    font-size: 13px;
+    font-weight: 700;
+    z-index: 5;
+    white-space: nowrap;
+    animation: targetPulse 2s ease-in-out infinite;
+}
+
+@keyframes targetPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(251,191,36,0.3); }
+    50% { box-shadow: 0 0 15px 5px rgba(251,191,36,0.15); }
+}
+
+/* ── Minimap ──────────────────────────────────────────────────── */
+.sim-minimap {
+    position: absolute;
+    bottom: 120px;
+    right: 16px;
+    width: 120px;
+    height: 120px;
+    background: rgba(0,0,0,0.7);
+    border: 2px solid rgba(124,58,237,0.3);
+    border-radius: 10px;
+    z-index: 5;
+    overflow: hidden;
+}
+
+.sim-minimap canvas {
+    width: 100%;
+    height: 100%;
+}
+
+/* ── Scorecard Modal ──────────────────────────────────────────── */
+.sim-scorecard {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(15px);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+    padding: 20px;
+}
+
+.sim-scorecard.active { display: flex; }
+
+.sim-scorecard-card {
+    background: linear-gradient(135deg, #1a1a3e 0%, #2a1a4e 100%);
+    border: 1px solid rgba(124,58,237,0.4);
+    border-radius: 24px;
+    padding: 30px;
+    max-width: 380px;
+    width: 100%;
+    text-align: center;
+    animation: scorecardIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes scorecardIn {
+    from { transform: scale(0.8) translateY(30px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.sim-scorecard-title {
+    font-size: 28px;
+    font-weight: 900;
+    margin-bottom: 5px;
+    background: linear-gradient(135deg, #a855f7, #c084fc);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.sim-scorecard-rank {
+    font-size: 14px;
+    color: #fbbf24;
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+
+.sim-scorecard-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.sim-stat-box {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 12px;
+}
+
+.sim-stat-box .label {
+    font-size: 10px;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.sim-stat-box .value {
+    font-size: 22px;
+    font-weight: 800;
+    color: #a855f7;
+    font-family: 'Courier New', monospace;
+}
+
+.sim-stat-box .value.gold { color: #fbbf24; }
+.sim-stat-box .value.green { color: #34d399; }
+
+.sim-scorecard-btns {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.sim-sc-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.sim-sc-btn.primary {
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    color: white;
+}
+
+.sim-sc-btn.secondary {
+    background: rgba(255,255,255,0.1);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.sim-sc-btn:hover { transform: translateY(-2px); }
+
+/* ── Notification Toast ───────────────────────────────────────── */
+.sim-toast {
+    position: absolute;
+    top: 90px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(124,58,237,0.4);
+    border-radius: 12px;
+    padding: 10px 24px;
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+    z-index: 15;
+    opacity: 0;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.sim-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* ── Responsive ───────────────────────────────────────────────── */
+@media (min-width: 768px) {
+    .sim-controls { height: 80px; padding: 10px 30px; }
+    .sim-ctrl-btn { width: 48px; height: 48px; font-size: 18px; }
+    .sim-ctrl-btn.gas, .sim-ctrl-btn.brake { width: 56px; height: 56px; }
+    .sim-speedometer { width: 110px; height: 110px; bottom: 100px; }
+    .sim-speed-val { font-size: 32px; }
+    .sim-gear-indicator { bottom: 100px; left: 140px; }
+    .sim-minimap { bottom: 100px; width: 140px; height: 140px; }
+}
+
+@media (max-width: 380px) {
+    .sim-ctrl-btn { width: 46px; height: 46px; font-size: 16px; }
+    .sim-ctrl-btn.gas, .sim-ctrl-btn.brake { width: 52px; height: 52px; }
+    .sim-speedometer { width: 80px; height: 80px; bottom: 115px; }
+    .sim-speed-val { font-size: 22px; }
+    .sim-hud-badge { font-size: 10px; padding: 4px 8px; }
+    .sim-minimap { width: 90px; height: 90px; }
+}
+
+/* ── Key hints for desktop ────────────────────────────────────── */
+.sim-key-hints {
+    position: absolute;
+    bottom: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: none;
+    gap: 8px;
+    z-index: 5;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 500px;
+}
+
+@media (min-width: 768px) {
+    .sim-key-hints { display: flex; }
+    .sim-steering-area { display: none !important; }
+}
+
+@media (max-width: 767px) {
+    .sim-key-hints { display: none !important; }
+}
+
+.sim-key-hint {
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
+    color: #9ca3af;
+}
+
+.sim-key-hint kbd {
+    background: rgba(255,255,255,0.15);
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-size: 11px;
+    color: #e5e7eb;
+    font-family: monospace;
+}
+
+/* ── Combo display ────────────────────────────────────────────── */
+.sim-combo {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 48px;
+    font-weight: 900;
+    color: #fbbf24;
+    text-shadow: 0 0 30px rgba(251,191,36,0.5);
+    z-index: 6;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.4s ease;
+}
+
+.sim-combo.show {
+    opacity: 1;
+    animation: comboPopIn 0.5s ease;
+}
+
+@keyframes comboPopIn {
+    0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+    60% { transform: translate(-50%, -50%) scale(1.2); }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+/* ── Headlight beam effect ────────────────────────────────────── */
+.sim-headlight-overlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 2;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.sim-headlight-overlay.night {
+    opacity: 1;
+    background: radial-gradient(ellipse 40% 60% at 50% 40%, transparent 0%, rgba(0,0,0,0.7) 100%);
+}
+
+/* ── Menu Overlay ─────────────────────────────────────────────── */
+.sim-menu-overlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(10px);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sim-menu-box {
+    background: linear-gradient(135deg, #1a1a3e 0%, #2a1a4e 100%);
+    border: 1px solid rgba(124,58,237,0.4);
+    border-radius: 24px;
+    padding: 30px;
+    width: 340px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    animation: menuPopIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes menuPopIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.sim-menu-title {
+    color: #a855f7;
+    font-size: 24px;
+    font-weight: 900;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.sim-menu-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.sim-menu-btn {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: white;
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.sim-menu-btn:hover {
+    background: rgba(255,255,255,0.1);
+    transform: translateY(-2px);
+    border-color: rgba(255,255,255,0.3);
+}
+
+.sim-menu-btn.primary {
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    border: none;
+    box-shadow: 0 4px 15px rgba(124,58,237,0.3);
+}
+
+.sim-menu-btn.primary:hover {
+    box-shadow: 0 6px 20px rgba(124,58,237,0.5);
+}
+
+.sim-menu-input {
+    width: 100%;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(124,58,237,0.3);
+    color: white;
+    padding: 14px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s;
+    box-sizing: border-box;
+}
+
+.sim-menu-input:focus {
+    border-color: #a855f7;
+    box-shadow: 0 0 10px rgba(124,58,237,0.2);
+}

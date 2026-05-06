@@ -1,6 +1,7 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
 import { getFirestore, collection, getDocs, doc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 import { getAuth } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+import { launchSimulator } from './simulator.js';
 
 const firebaseConfig = {
     apiKey: "AIzaSyBMZz7gVpJjJ2WBaTlutAYC-UnDgXDRGuE",
@@ -362,6 +363,18 @@ async function getBotResponse(userMessage) {
             window._customSpeech = lang === 'ta' ? "பதிவு ரத்து செய்யப்பட்டது. வேறு ஏதாவது உதவி வேண்டுமா?" : "Booking cancelled. Need anything else?";
             return lang === 'ta' ? `❌ பதிவு ரத்து செய்யப்பட்டது. வேறு ஏதாவது உதவி வேண்டுமா?` : `❌ Booking cancelled. Need anything else?`;
         }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // ── PARKING SIMULATOR (trigger words) ──
+    // ═══════════════════════════════════════════════════════════════════════
+    if (msg.includes('play game') || msg.includes('start simulator') || msg.includes('training mode') ||
+        msg.includes('parking challenge') || msg.includes('simulator') || msg.includes('game')) {
+        window._customSpeech = lang === 'ta' ? 'AI பார்க்கிங் பயிற்சி பயன்முறை செயல்படுத்தப்பட்டது!' : 'AI Parking Training Mode Activated!';
+        setTimeout(() => launchSimulator(), 800);
+        return lang === 'ta'
+            ? `🎮 AI பார்க்கிங் பயிற்சி பயன்முறை செயல்படுத்தப்பட்டது! 🏎️\n\nஉங்கள் சிமுலேட்டர் தொடங்குகிறது...`
+            : `🎮 AI Parking Training Mode Activated! 🏎️\n\nYour simulator is launching now...\n\n🕹️ Controls: WASD/Arrows to drive, Space=Brake, Shift=Nitro, H=Horn, R=Reverse, L=Lights`;
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -761,6 +774,9 @@ function createChatbotUI() {
                             </button>
                             <button class="quick-reply-btn" data-message="book slot" style="background: white; border: 2px solid #2563eb; color: #2563eb; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
                                 📝 Book Slot
+                            </button>
+                            <button class="quick-reply-btn launch-simulator-btn" data-message="start simulator" style="background: linear-gradient(135deg, #7c3aed, #a855f7); border: 2px solid #7c3aed; color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
+                                🎮 Parking Simulator
                             </button>
                         </div>
                     </div>
