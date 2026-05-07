@@ -384,94 +384,199 @@ async function getBotResponse(userMessage) {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // ── OPENAI CHATBOT ENGINE (Replaces Rule-based Intents) ──
+    // ── PARKING SIMULATOR (trigger words) ──
     // ═══════════════════════════════════════════════════════════════════════
-    try {
-        await fetchParkingData();
-        
-        const response = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                message: userMessage, 
-                parkingData: parkingData 
-            })
-        });
-
-        const data = await response.json();
-        let aiReply = data.reply || "I am currently unable to connect to my AI core.";
-
-        // Handle special actions from OpenAI
-        if (aiReply.includes('[ACTION_BOOK]')) {
-            aiReply = aiReply.replace('[ACTION_BOOK]', '').trim();
-            bookingState.step = "choose_location";
-            window._customSpeech = aiReply;
-            const prompt = lang === 'ta'
-                ? `🅿️ ஸ்லாட் பதிவு! எந்த இடத்தை தேர்வு செய்கிறீர்கள்? 👇`
-                : `🅿️ Let's book a slot! Select your location 👇`;
-            return `${aiReply}\n\n${prompt}\n<div class="slot-btn-grid"><button class="location-pick-btn" data-loc="rathinam_main_gate" data-name="Main Gate">🏢 Main Gate</button><button class="location-pick-btn" data-loc="rathinam_gate1" data-name="Gate 1">🚪 Gate 1</button><button class="location-pick-btn" data-loc="rathinam_gate3" data-name="Gate 3">🏭 Gate 3</button></div>`;
-        }
-        
-        if (aiReply.includes('[ACTION_SIMULATOR]')) {
-            aiReply = aiReply.replace('[ACTION_SIMULATOR]', '').trim();
-            window._customSpeech = aiReply;
-            setTimeout(() => launchSimulator(), 800);
-            return `${aiReply}\n\n🎮 AI Parking Training Mode Activated! 🏎️\nYour simulator is launching now...`;
-        }
-
-        if (aiReply.includes('[ACTION_NAVIGATE]')) {
-            aiReply = aiReply.replace('[ACTION_NAVIGATE]', '').trim();
-            window._customSpeech = aiReply;
-            return `${aiReply}\n\n📍 You can get directions to any parking location by clicking the "Direction" button on the location cards. This will open Google Maps.`;
-        }
-
-        window._customSpeech = aiReply;
-        return aiReply;
-    } catch (err) {
-        console.error("OpenAI Chat Error:", err);
-        window._customSpeech = lang === 'ta' ? "மன்னிக்கவும், நெட்வொர்க் பிழை." : "Sorry, there was a network error.";
-        return lang === 'ta' ? "❌ நெட்வொர்க் பிழை." : "❌ Network error.";
+    if (msg.includes('play game') || msg.includes('start simulator') || msg.includes('training mode') ||
+        msg.includes('parking challenge') || msg.includes('simulator') || msg.includes('game')) {
+        window._customSpeech = lang === 'ta' ? 'AI பார்க்கிங் பயிற்சி பயன்முறை செயல்படுத்தப்பட்டது!' : 'AI Parking Training Mode Activated!';
+        setTimeout(() => launchSimulator(), 800);
+        return lang === 'ta'
+            ? `🎮 AI பார்க்கிங் பயிற்சி பயன்முறை செயல்படுத்தப்பட்டது! 🏎️\n\nஉங்கள் சிமுலேட்டர் தொடங்குகிறது...`
+            : `🎮 AI Parking Training Mode Activated! 🏎️\n\nYour simulator is launching now...`;
     }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // ── START BOOKING (trigger words) ──
+    // ═══════════════════════════════════════════════════════════════════════
+    if (msg.includes('book slot') || msg.includes('book pannu') || msg.includes('book pannunga') ||
+        msg.includes('booking pannu') || msg.match(/\bbook\b/)) {
+        bookingState.step = "choose_location";
+        window._customSpeech = lang === 'ta' ? "மெயின் கேட், கேட் 1, கேட் 3" : "Main Gate, Gate 1, Gate 3";
+        const prompt = lang === 'ta'
+            ? `🅿️ ஸ்லாட் பதிவு! எந்த இடத்தை தேர்வு செய்கிறீர்கள் ? 👇`
+            : `🅿️ Let's book a slot! Select your location 👇`;
+        return `${prompt}\n<div class="slot-btn-grid"><button class="location-pick-btn" data-loc="rathinam_main_gate" data-name="Main Gate">🏢 Main Gate</button><button class="location-pick-btn" data-loc="rathinam_gate1" data-name="Gate 1">🚪 Gate 1</button><button class="location-pick-btn" data-loc="rathinam_gate3" data-name="Gate 3">🏭 Gate 3</button></div>`;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // ── Regular intents (non-booking) ──
+    // ═══════════════════════════════════════════════════════════════════════
+
+    // ── Greeting ──
+    if (msg.match(/\b(hi|hello|hey|vanakkam|nandri)\b/)) {
+        if (lang === 'ta') {
+            window._customSpeech = "வணக்கம்! நான் ஃபாஸ்ட்பார்க் ரெசப்ஷனிஸ்ட். நான் உங்களுக்கு எப்படி உதவ முடியும்? காலியான பார்க்கிங் ஸ்லாட்டுகள், அல்லது கட்டணங்கள் பற்றி நீங்கள் என்னிடம் கேட்கலாம்.";
+            return `வணக்கம்! 👋 நான் உங்கள் FASTPARK பார்க்கிங் ரெசப்ஷனிஸ்ட். ஸ்லாட்டுகள், கட்டணம், பதிவு செய்வது பற்றி தயக்கமில்லாமல் கேளுங்கள்!`;
+        }
+        window._customSpeech = "Hello there! I am your FastPark receptionist. How may I assist you today? You can ask me about available slots, or pricing.";
+        return `Hello! 👋 I'm your FASTPARK parking receptionist. Ask me about available slots, pricing, or say "book slot" to start booking!`;
+    }
+
+    // ── Parking slots / availability queries ──
+    if (msg.includes('slot') || msg.includes('parking') || msg.includes('available') ||
+        msg.includes('iruku') || msg.includes('irukka') || msg.includes('iruka') ||
+        msg.includes('kidaikuma') || msg.includes('kidaikkuma') ||
+        msg.includes('ethana') || msg.includes('எத்தனை') || msg.includes('parkingu') || msg.includes('slotu') || msg.includes('slottu')) {
+        await fetchParkingData();
+
+        if (msg.includes('main gate')) {
+            const data = parkingData.rathinam_main_gate;
+            window._customSpeech = lang === 'ta' ? `சரி, பார்க்கிறேன். மெயின் கேட்டில் மொத்தம் ${data.total} ஸ்லாட்டுகளில் ${data.available} காலியாக உள்ளன.` : `Let me check that for you. At the Main Gate, we currently have ${data.available} out of ${data.total} slots available.`;
+            if (lang === 'ta') return `ரத்தினம் மெயின் கேட்டில் ${data.available} ஸ்லாட்டுகள் காலியாக உள்ளன (மொத்தம்: ${data.total}).`;
+            return `Rathinam Main Gate has ${data.available} available slots out of ${data.total} total slots.`;
+        } else if (msg.includes('gate 1') || msg.includes('gate1')) {
+            const data = parkingData.rathinam_gate1;
+            window._customSpeech = lang === 'ta' ? `நிச்சயமாக. கேட் 1-ல், ${data.available} ஸ்லாட்டுகள் காலியாக உள்ளன.` : `Sure. At Gate 1, there are ${data.available} available slots.`;
+            if (lang === 'ta') return `ரத்தினம் கேட் 1-ல் ${data.available} ஸ்லாட்டுகள் காலியாக உள்ளன (மொத்தம்: ${data.total}).`;
+            return `Rathinam Gate 1 has ${data.available} available slots out of ${data.total} total slots.`;
+        } else if (msg.includes('gate 3') || msg.includes('gate3')) {
+            const data = parkingData.rathinam_gate3;
+            window._customSpeech = lang === 'ta' ? `கேட் 3-ல், ${data.available} ஸ்லாட்டுகள் இப்போது காலியாக உள்ளன.` : `At Gate 3, we have ${data.available} slots available right now.`;
+            if (lang === 'ta') return `ரத்தினம் கேட் 3-ல் ${data.available} ஸ்லாட்டுகள் காலியாக உள்ளன (மொத்தம்: ${data.total}).`;
+            return `Rathinam Gate 3 has ${data.available} available slots out of ${data.total} total slots.`;
+        } else {
+            const mainGate = parkingData.rathinam_main_gate;
+            const gate1 = parkingData.rathinam_gate1;
+            const gate3 = parkingData.rathinam_gate3;
+
+            window._customSpeech = lang === 'ta'
+                ? `தற்போதுள்ள பார்க்கிங் நிலவரத்தை சொல்கிறேன். மெயின் கேட்டில் ${mainGate.available}, கேட் ஒன்றில் ${gate1.available}, மற்றும் கேட் மூன்றில் ${gate3.available} ஸ்லாட்டுகள் காலியாக உள்ளன. நீங்கள் ஒன்றை புக் செய்ய விரும்புகிறீர்களா?`
+                : `Here is the current parking status. We have ${mainGate.available} slots at the Main Gate, ${gate1.available} at Gate 1, and ${gate3.available} at Gate 3. Would you like to book one?`;
+
+            if (lang === 'ta') {
+                return `தற்போது காலியாக உள்ள பார்க்கிங் ஸ்லாட்டுகள்:\nமெயின் கேட்: ${mainGate.available}/${mainGate.total} ஸ்லாட்டுகள்\nகேட் 1: ${gate1.available}/${gate1.total} ஸ்லாட்டுகள்\nகேட் 3: ${gate3.available}/${gate3.total} ஸ்லாட்டுகள்`;
+            }
+            return `Available parking slots:\n\n` +
+                `Rathinam Main Gate: ${mainGate.available}/${mainGate.total} available\n` +
+                `Rathinam Gate 1: ${gate1.available}/${gate1.total} available\n` +
+                `Rathinam Gate 3: ${gate3.available}/${gate3.total} available`;
+        }
+    }
+
+    // ── Pricing queries (English + Tanglish) ──
+    if (msg.includes('price') || msg.includes('cost') || msg.includes('rate') ||
+        msg.includes('charge') || msg.includes('fee') || msg.includes('how much') ||
+        msg.includes('amount') || msg.includes('kaasu') || msg.includes('panam') ||
+        msg.includes('evlo') || msg.includes('vilai')) {
+        window._customSpeech = lang === 'ta' ? "பார்க்கிங் கட்டணம் ஒரு மணி நேரத்திற்கு 80 ரூபாய் மட்டுமே. நீங்கள் ஆன்லைனில் அல்லது ரொக்கமாக கட்டணத்தை செலுத்தலாம்." : "The parking fee is 80 rupees per hour. You can comfortably pay online or in cash when you exit.";
+        if (lang === 'ta') return `பார்க்கிங் கட்டணம் ஒரு மணி நேரத்திற்கு ₹80. ஆன்லைனில் அல்லது ரொக்கமாக பணத்தை செலுத்தலாம்.`;
+        return `Our parking rates are ₹80 per hour for all locations. Payment can be made online or in cash at exit.`;
+    }
+
+    // ── Location / Direction queries ──
+    if (msg.includes('direction') || msg.includes('location') || msg.includes('where') ||
+        msg.includes('address') || msg.includes('map') || msg.includes('idam') ||
+        msg.includes('enga iruku') || msg.includes('enga') || msg.includes('enga irukkurathu')) {
+        window._customSpeech = lang === 'ta' ? "இடத்தின் விவரங்களுக்கு, லொகேஷன் கார்டில் உள்ள 'டைரக்ஷன்' பட்டனை கிளிக் செய்யவும். அது கூகுள் மேப்ஸில் வழிகாட்டும்." : "For directions, please click the 'Direction' button on the location card. It will guide you via Google Maps.";
+        if (lang === 'ta') return `இடத்தின் விவரங்களுக்கு, லொகேஷன் கார்டில் உள்ள "📍 Direction" பட்டனை கிளிக் செய்யவும். கூகுள் மேப்ஸ் திறக்கும்.`;
+        return `You can get directions to any parking location by clicking the "📍 Direction" button on the location card. This will open Google Maps.`;
+    }
+
+    // ── Payment queries ──
+    if (msg.includes('payment') || msg.includes('pay') || msg.includes('razorpay') || msg.includes('upi') || msg.includes('cash')) {
+        window._customSpeech = lang === 'ta' ? "நீங்கள் ரேஸர்பே, யூ பி ஐ மூலமாக ஆன்லைனில் செலுத்தலாம், அல்லது வெளியேறும்போது ரொக்கமாகவும் செலுத்தலாம்." : "You can seamlessly pay online via Razorpay or UPI, or just pay in cash at the exit gate.";
+        if (lang === 'ta') return `நீங்கள் இணைய வழியில் (Razorpay/UPI) அல்லது வெளியேறும் போது ரொக்கமாக செலுத்தலாம். கட்டணம் ஒரு மணி நேரத்திற்கு ₹80.`;
+        return `You can pay online via Razorpay/UPI or pay in cash at the exit gate. Rate is ₹80 per hour.`;
+    }
+
+    // ── Time / duration queries ──
+    if (msg.includes('time') || msg.includes('hour') || msg.includes('duration') || msg.includes('long')) {
+        window._customSpeech = lang === 'ta' ? "நீங்கள் எவ்வளவு நேரம் வேண்டுமானாலும் வாகனத்தை பாதுகாப்பாக நிறுத்தலாம். கட்டணம் ஒரு மணி நேரத்திற்கு 80 ரூபாய் கணக்கிடப்படும்." : "You can park your vehicle for as long as you need. The charges are calculated at 80 rupees per hour when you exit.";
+        if (lang === 'ta') return `நீங்கள் எவ்வளவு நேரம் வேண்டுமானாலும் வாகனத்தை நிறுத்தலாம். கட்டணம் ஒரு மணி நேரத்திற்கு ₹80.`;
+        return `You can park for as long as you need. Charges are ₹80 per hour, calculated at exit.`;
+    }
+
+    // ── Help query ──
+    if (msg.includes('help') || msg.includes('what can you do') || msg.includes('enna pannuva')) {
+        window._customSpeech = lang === 'ta' ? "நான் ஒரு பார்க்கிங் அசிஸ்டன்ட். காலியான இடங்களை அறிந்துகொள்ளவும், பார்க்கிங் புக் செய்யவும் நான் உங்களுக்கு உதவுவேன்." : "I am an AI parking assistant. I can help you find available slots, tell you the pricing, or guide you to book a parking spot.";
+        if (lang === 'ta') {
+            return `நான் இவை அனைத்திலும் உதவ முடியும்:\n• காலியான ஸ்லாட்டுகளை அறிய\n• கட்டண விவரங்கள் (₹80/மணி)\n• ஸ்லாட் பதிவு செய்ய — "book slot" என சொல்லுங்கள்\n• கட்டணம் செலுத்தும் முறைகள்\n• வரைபடம் / இருப்பிடம்`;
+        }
+        return `I can help you with:\n• Checking available parking slots\n• Pricing information (₹80/hour)\n• Book a slot — just say "book slot"\n• Payment options\n• Getting directions`;
+    }
+
+    // ── Thank you ──
+    if (msg.match(/\b(thank|thanks|nandri)\b/)) {
+        window._customSpeech = lang === 'ta' ? "மிக்க நன்றி! பாதுகாப்பான பயணம் அமையட்டும்." : "You are very welcome! Have a safe and wonderful day.";
+        if (lang === 'ta') return `நன்றி! 🙏 வேறு ஏதேனும் உதவி தேவைப்பட்டால் கேட்கவும்.`;
+        return `You're welcome! 😊 Feel free to ask if you need anything else.`;
+    }
+
+    // ── Default response ──
+    window._customSpeech = lang === 'ta' ? "மன்னிக்கவும், எனக்கு சரியாக புரியவில்லை. பார்க்கிங் ஸ்லாட்டுகள், அல்லது கட்டணங்கள் பற்றி நீங்கள் என்னிடம் கேட்கலாம்." : "I'm sorry, I didn't quite catch that. You can ask me about available slots, pricing, or say book a slot.";
+    if (lang === 'ta') {
+        return `நான் பார்க்கிங் பற்றிய தகவல்களை கூற முடியும். (காலியான ஸ்லாட்டுகள், கட்டணம் மற்றும் பதிவு செய்தல் பற்றி கேட்கவும்)`;
+    }
+    return `I can help you with:\n• Checking available parking slots\n• Pricing information (₹80/hour)\n• Book a slot — say "book slot"\n• Payment options\n• Getting directions\n\nPlease ask me anything about parking!`;
 }
 
 
-// ─── Text-to-Speech: Premium AI Voice Synthesis (OpenAI) ───────────────────
-async function speak(text) {
+// ─── Text-to-Speech: Premium AI Voice Synthesis ─────────────────────────────
+function getBestVoice(langCode) {
+    const voices = window.speechSynthesis.getVoices();
+    if (!voices || voices.length === 0) return null;
+
+    let bestVoice = null;
+    if (langCode === 'ta') {
+        bestVoice = voices.find(v => v.lang === 'ta-IN' && (v.name.includes('Google') || v.name.includes('Premium') || v.name.includes('Neural') || v.name.includes('Natural')));
+        if (!bestVoice) bestVoice = voices.find(v => v.lang === 'ta-IN');
+        if (!bestVoice) bestVoice = voices.find(v => v.lang.startsWith('ta'));
+    } else {
+        bestVoice = voices.find(v => (v.lang === 'en-IN' || v.lang === 'en-US' || v.lang === 'en-GB') && (v.name.includes('Google') || v.name.includes('Premium') || v.name.includes('Neural') || v.name.includes('Natural') || v.name.includes('Microsoft Ana')));
+        if (!bestVoice) bestVoice = voices.find(v => v.lang === 'en-IN');
+        if (!bestVoice) bestVoice = voices.find(v => v.lang.startsWith('en'));
+    }
+    return bestVoice;
+}
+
+function speak(text) {
     window.speechSynthesis.cancel();
-    
-    if (window._currentAudio) {
-        window._currentAudio.pause();
-        window._currentAudio = null;
+
+    // Add natural breath pauses by replacing punctuation with a slight pause indicator
+    let processedText = text.replace(/([.!?])\s*/g, '$1, ');
+
+    const speech = new SpeechSynthesisUtterance(processedText);
+    const isTamil = window.currentLang === 'ta';
+    speech.lang = isTamil ? 'ta-IN' : 'en-IN';
+
+    // Natural human speaking rate and pitch
+    speech.rate = 0.92; // Slightly slower for clear, professional pronunciation
+    speech.pitch = isTamil ? 1.05 : 1.0;
+
+    // Find the most premium AI voice available on the device
+    const bestVoice = getBestVoice(window.currentLang);
+    if (bestVoice) {
+        speech.voice = bestVoice;
     }
 
-    if (!text) return;
+    // Track speaking state internally but do not force UI to display
+    speech.onstart = () => {
+        window.isSpeakingWave = true;
+    };
 
-    window.isSpeakingWave = true;
-
-    try {
-        const response = await fetch('/api/tts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text })
-        });
-        
-        const data = await response.json();
-        
-        if (data.audio) {
-            const audio = new Audio(data.audio);
-            window._currentAudio = audio;
-            
-            audio.onended = () => { window.isSpeakingWave = false; };
-            audio.onerror = () => { window.isSpeakingWave = false; };
-            
-            await audio.play();
-        } else {
-            window.isSpeakingWave = false;
-        }
-    } catch (err) {
-        console.error("TTS playback error:", err);
+    const hideSpeakingUI = () => {
         window.isSpeakingWave = false;
-    }
+    };
+
+    speech.onend = hideSpeakingUI;
+    speech.onerror = hideSpeakingUI;
+
+    window.speechSynthesis.speak(speech);
+}
+
+// Preload voices
+if (window.speechSynthesis.onvoiceschanged !== undefined) {
+    window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
 }
 
 // ─── Create Chatbot UI ──────────────────────────────────────────────────────
