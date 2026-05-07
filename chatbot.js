@@ -265,7 +265,7 @@ async function getBotResponse(userMessage) {
     if (bookingState.step !== null) {
         const words = msg.split(/\s+/);
         const intentKeywords = ['cancel', 'stop', 'vendam', 'price', 'cost', 'evlo', 'rate', 'available', 'ethana', 'direction', 'map', 'enga'];
-        
+
         const isIntentSwitch = intentKeywords.some(kw => words.includes(kw)) || msg.includes('how much') || msg.includes('how many');
 
         if (isIntentSwitch && !msg.includes('book')) {
@@ -392,7 +392,7 @@ async function getBotResponse(userMessage) {
         setTimeout(() => launchSimulator(), 800);
         return lang === 'ta'
             ? `🎮 AI பார்க்கிங் பயிற்சி பயன்முறை செயல்படுத்தப்பட்டது! 🏎️\n\nஉங்கள் சிமுலேட்டர் தொடங்குகிறது...`
-            : `🎮 AI Parking Training Mode Activated! 🏎️\n\nYour simulator is launching now...\n\n🕹️ Controls: WASD/Arrows to drive, Space=Brake, Shift=Nitro, H=Horn, R=Reverse, L=Lights`;
+            : `🎮 AI Parking Training Mode Activated! 🏎️\n\nYour simulator is launching now...`;
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -403,7 +403,7 @@ async function getBotResponse(userMessage) {
         bookingState.step = "choose_location";
         window._customSpeech = lang === 'ta' ? "மெயின் கேட், கேட் 1, கேட் 3" : "Main Gate, Gate 1, Gate 3";
         const prompt = lang === 'ta'
-            ? `🅿️ ஸ்லாட் பதிவு! எந்த இடத்தை தேர்வு செய்கிறீர்கள்? 👇`
+            ? `🅿️ ஸ்லாட் பதிவு! எந்த இடத்தை தேர்வு செய்கிறீர்கள் ? 👇`
             : `🅿️ Let's book a slot! Select your location 👇`;
         return `${prompt}\n<div class="slot-btn-grid"><button class="location-pick-btn" data-loc="rathinam_main_gate" data-name="Main Gate">🏢 Main Gate</button><button class="location-pick-btn" data-loc="rathinam_gate1" data-name="Gate 1">🚪 Gate 1</button><button class="location-pick-btn" data-loc="rathinam_gate3" data-name="Gate 3">🏭 Gate 3</button></div>`;
     }
@@ -449,10 +449,10 @@ async function getBotResponse(userMessage) {
             const gate1 = parkingData.rathinam_gate1;
             const gate3 = parkingData.rathinam_gate3;
 
-            window._customSpeech = lang === 'ta' 
-                ? `தற்போதுள்ள பார்க்கிங் நிலவரத்தை சொல்கிறேன். மெயின் கேட்டில் ${mainGate.available}, கேட் ஒன்றில் ${gate1.available}, மற்றும் கேட் மூன்றில் ${gate3.available} ஸ்லாட்டுகள் காலியாக உள்ளன. நீங்கள் ஒன்றை புக் செய்ய விரும்புகிறீர்களா?` 
+            window._customSpeech = lang === 'ta'
+                ? `தற்போதுள்ள பார்க்கிங் நிலவரத்தை சொல்கிறேன். மெயின் கேட்டில் ${mainGate.available}, கேட் ஒன்றில் ${gate1.available}, மற்றும் கேட் மூன்றில் ${gate3.available} ஸ்லாட்டுகள் காலியாக உள்ளன. நீங்கள் ஒன்றை புக் செய்ய விரும்புகிறீர்களா?`
                 : `Here is the current parking status. We have ${mainGate.available} slots at the Main Gate, ${gate1.available} at Gate 1, and ${gate3.available} at Gate 3. Would you like to book one?`;
-            
+
             if (lang === 'ta') {
                 return `தற்போது காலியாக உள்ள பார்க்கிங் ஸ்லாட்டுகள்:\nமெயின் கேட்: ${mainGate.available}/${mainGate.total} ஸ்லாட்டுகள்\nகேட் 1: ${gate1.available}/${gate1.total} ஸ்லாட்டுகள்\nகேட் 3: ${gate3.available}/${gate3.total} ஸ்லாட்டுகள்`;
             }
@@ -541,17 +541,17 @@ function getBestVoice(langCode) {
 
 function speak(text) {
     window.speechSynthesis.cancel();
-    
+
     // Add natural breath pauses by replacing punctuation with a slight pause indicator
     let processedText = text.replace(/([.!?])\s*/g, '$1, ');
-    
+
     const speech = new SpeechSynthesisUtterance(processedText);
     const isTamil = window.currentLang === 'ta';
     speech.lang = isTamil ? 'ta-IN' : 'en-IN';
-    
+
     // Natural human speaking rate and pitch
     speech.rate = 0.92; // Slightly slower for clear, professional pronunciation
-    speech.pitch = isTamil ? 1.05 : 1.0; 
+    speech.pitch = isTamil ? 1.05 : 1.0;
 
     // Find the most premium AI voice available on the device
     const bestVoice = getBestVoice(window.currentLang);
@@ -563,11 +563,11 @@ function speak(text) {
     speech.onstart = () => {
         window.isSpeakingWave = true;
     };
-    
+
     const hideSpeakingUI = () => {
         window.isSpeakingWave = false;
     };
-    
+
     speech.onend = hideSpeakingUI;
     speech.onerror = hideSpeakingUI;
 
