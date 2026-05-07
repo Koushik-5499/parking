@@ -160,7 +160,7 @@
 .sim-speedometer {
     position: absolute;
     bottom: 120px;
-    left: 16px;
+    right: 160px;
     width: 100px;
     height: 100px;
     background: rgba(0,0,0,0.7);
@@ -193,7 +193,7 @@
 .sim-gear-indicator {
     position: absolute;
     bottom: 120px;
-    left: 130px;
+    right: 16px;
     background: rgba(0,0,0,0.7);
     backdrop-filter: blur(10px);
     border: 2px solid rgba(124,58,237,0.3);
@@ -458,7 +458,7 @@
 /* ── Minimap ──────────────────────────────────────────────────── */
 .sim-minimap {
     position: absolute;
-    bottom: 120px;
+    bottom: 235px;
     right: 16px;
     width: 120px;
     height: 120px;
@@ -615,16 +615,16 @@
     .sim-controls { height: 80px; padding: 10px 30px; }
     .sim-ctrl-btn { width: 48px; height: 48px; font-size: 18px; }
     .sim-ctrl-btn.gas, .sim-ctrl-btn.brake { width: 56px; height: 56px; }
-    .sim-speedometer { width: 110px; height: 110px; bottom: 100px; }
+    .sim-speedometer { width: 110px; height: 110px; bottom: 100px; right: 175px; }
     .sim-speed-val { font-size: 32px; }
-    .sim-gear-indicator { bottom: 100px; left: 140px; }
-    .sim-minimap { bottom: 100px; width: 140px; height: 140px; }
+    .sim-gear-indicator { bottom: 100px; right: 16px; left: auto; }
+    .sim-minimap { bottom: 220px; width: 140px; height: 140px; }
 }
 
 @media (max-width: 380px) {
     .sim-ctrl-btn { width: 46px; height: 46px; font-size: 16px; }
     .sim-ctrl-btn.gas, .sim-ctrl-btn.brake { width: 52px; height: 52px; }
-    .sim-speedometer { width: 80px; height: 80px; bottom: 115px; }
+    .sim-speedometer { width: 80px; height: 80px; bottom: 115px; right: 110px; }
     .sim-speed-val { font-size: 22px; }
     .sim-hud-badge { font-size: 10px; padding: 4px 8px; }
     .sim-minimap { width: 90px; height: 90px; }
