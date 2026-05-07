@@ -260,6 +260,24 @@ async function getBotResponse(userMessage) {
     const msg = normalizeText(userMessage);
 
     // ═══════════════════════════════════════════════════════════════════════
+    // ── GLOBAL INTENT INTERCEPTOR (Overrides Booking Flow) ──
+    // ═══════════════════════════════════════════════════════════════════════
+    if (bookingState.step !== null) {
+        const words = msg.split(/\s+/);
+        const intentKeywords = ['cancel', 'stop', 'vendam', 'price', 'cost', 'evlo', 'rate', 'available', 'ethana', 'direction', 'map', 'enga'];
+        
+        const isIntentSwitch = intentKeywords.some(kw => words.includes(kw)) || msg.includes('how much') || msg.includes('how many');
+
+        if (isIntentSwitch && !msg.includes('book')) {
+            resetBookingState();
+            if (msg.trim() === 'cancel' || msg.trim() === 'stop' || msg.trim() === 'vendam') {
+                window._customSpeech = lang === 'ta' ? "பதிவு ரத்து செய்யப்பட்டது. வேறு என்ன தகவல் வேண்டும்?" : "Booking cancelled. What else can I help you with?";
+                return lang === 'ta' ? "❌ பதிவு ரத்து செய்யப்பட்டது." : "❌ Booking cancelled.";
+            }
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
     // ── BOOKING FLOW: Step-by-step state machine ──
     // ═══════════════════════════════════════════════════════════════════════
 
@@ -397,9 +415,11 @@ async function getBotResponse(userMessage) {
     // ── Greeting ──
     if (msg.match(/\b(hi|hello|hey|vanakkam|nandri)\b/)) {
         if (lang === 'ta') {
-            return `வணக்கம்! 👋 நான் உங்கள் பார்க்கிங் உதவியாளர். ஸ்லாட்டுகள், கட்டணம், பதிவு செய்வது பற்றி கேளுங்கள்!`;
+            window._customSpeech = "வணக்கம்! நான் ஃபாஸ்ட்பார்க் ரெசப்ஷனிஸ்ட். நான் உங்களுக்கு எப்படி உதவ முடியும்? காலியான பார்க்கிங் ஸ்லாட்டுகள், அல்லது கட்டணங்கள் பற்றி நீங்கள் என்னிடம் கேட்கலாம்.";
+            return `வணக்கம்! 👋 நான் உங்கள் FASTPARK பார்க்கிங் ரெசப்ஷனிஸ்ட். ஸ்லாட்டுகள், கட்டணம், பதிவு செய்வது பற்றி தயக்கமில்லாமல் கேளுங்கள்!`;
         }
-        return `Hello! 👋 I'm your parking assistant. Ask me about available slots, pricing, or say "book slot" to start booking!`;
+        window._customSpeech = "Hello there! I am your FastPark receptionist. How may I assist you today? You can ask me about available slots, or pricing.";
+        return `Hello! 👋 I'm your FASTPARK parking receptionist. Ask me about available slots, pricing, or say "book slot" to start booking!`;
     }
 
     // ── Parking slots / availability queries ──
@@ -411,14 +431,17 @@ async function getBotResponse(userMessage) {
 
         if (msg.includes('main gate')) {
             const data = parkingData.rathinam_main_gate;
+            window._customSpeech = lang === 'ta' ? `சரி, பார்க்கிறேன். மெயின் கேட்டில் மொத்தம் ${data.total} ஸ்லாட்டுகளில் ${data.available} காலியாக உள்ளன.` : `Let me check that for you. At the Main Gate, we currently have ${data.available} out of ${data.total} slots available.`;
             if (lang === 'ta') return `ரத்தினம் மெயின் கேட்டில் ${data.available} ஸ்லாட்டுகள் காலியாக உள்ளன (மொத்தம்: ${data.total}).`;
             return `Rathinam Main Gate has ${data.available} available slots out of ${data.total} total slots.`;
         } else if (msg.includes('gate 1') || msg.includes('gate1')) {
             const data = parkingData.rathinam_gate1;
+            window._customSpeech = lang === 'ta' ? `நிச்சயமாக. கேட் 1-ல், ${data.available} ஸ்லாட்டுகள் காலியாக உள்ளன.` : `Sure. At Gate 1, there are ${data.available} available slots.`;
             if (lang === 'ta') return `ரத்தினம் கேட் 1-ல் ${data.available} ஸ்லாட்டுகள் காலியாக உள்ளன (மொத்தம்: ${data.total}).`;
             return `Rathinam Gate 1 has ${data.available} available slots out of ${data.total} total slots.`;
         } else if (msg.includes('gate 3') || msg.includes('gate3')) {
             const data = parkingData.rathinam_gate3;
+            window._customSpeech = lang === 'ta' ? `கேட் 3-ல், ${data.available} ஸ்லாட்டுகள் இப்போது காலியாக உள்ளன.` : `At Gate 3, we have ${data.available} slots available right now.`;
             if (lang === 'ta') return `ரத்தினம் கேட் 3-ல் ${data.available} ஸ்லாட்டுகள் காலியாக உள்ளன (மொத்தம்: ${data.total}).`;
             return `Rathinam Gate 3 has ${data.available} available slots out of ${data.total} total slots.`;
         } else {
@@ -426,6 +449,10 @@ async function getBotResponse(userMessage) {
             const gate1 = parkingData.rathinam_gate1;
             const gate3 = parkingData.rathinam_gate3;
 
+            window._customSpeech = lang === 'ta' 
+                ? `தற்போதுள்ள பார்க்கிங் நிலவரத்தை சொல்கிறேன். மெயின் கேட்டில் ${mainGate.available}, கேட் ஒன்றில் ${gate1.available}, மற்றும் கேட் மூன்றில் ${gate3.available} ஸ்லாட்டுகள் காலியாக உள்ளன. நீங்கள் ஒன்றை புக் செய்ய விரும்புகிறீர்களா?` 
+                : `Here is the current parking status. We have ${mainGate.available} slots at the Main Gate, ${gate1.available} at Gate 1, and ${gate3.available} at Gate 3. Would you like to book one?`;
+            
             if (lang === 'ta') {
                 return `தற்போது காலியாக உள்ள பார்க்கிங் ஸ்லாட்டுகள்:\nமெயின் கேட்: ${mainGate.available}/${mainGate.total} ஸ்லாட்டுகள்\nகேட் 1: ${gate1.available}/${gate1.total} ஸ்லாட்டுகள்\nகேட் 3: ${gate3.available}/${gate3.total} ஸ்லாட்டுகள்`;
             }
@@ -441,6 +468,7 @@ async function getBotResponse(userMessage) {
         msg.includes('charge') || msg.includes('fee') || msg.includes('how much') ||
         msg.includes('amount') || msg.includes('kaasu') || msg.includes('panam') ||
         msg.includes('evlo') || msg.includes('vilai')) {
+        window._customSpeech = lang === 'ta' ? "பார்க்கிங் கட்டணம் ஒரு மணி நேரத்திற்கு 80 ரூபாய் மட்டுமே. நீங்கள் ஆன்லைனில் அல்லது ரொக்கமாக கட்டணத்தை செலுத்தலாம்." : "The parking fee is 80 rupees per hour. You can comfortably pay online or in cash when you exit.";
         if (lang === 'ta') return `பார்க்கிங் கட்டணம் ஒரு மணி நேரத்திற்கு ₹80. ஆன்லைனில் அல்லது ரொக்கமாக பணத்தை செலுத்தலாம்.`;
         return `Our parking rates are ₹80 per hour for all locations. Payment can be made online or in cash at exit.`;
     }
@@ -449,24 +477,28 @@ async function getBotResponse(userMessage) {
     if (msg.includes('direction') || msg.includes('location') || msg.includes('where') ||
         msg.includes('address') || msg.includes('map') || msg.includes('idam') ||
         msg.includes('enga iruku') || msg.includes('enga') || msg.includes('enga irukkurathu')) {
+        window._customSpeech = lang === 'ta' ? "இடத்தின் விவரங்களுக்கு, லொகேஷன் கார்டில் உள்ள 'டைரக்ஷன்' பட்டனை கிளிக் செய்யவும். அது கூகுள் மேப்ஸில் வழிகாட்டும்." : "For directions, please click the 'Direction' button on the location card. It will guide you via Google Maps.";
         if (lang === 'ta') return `இடத்தின் விவரங்களுக்கு, லொகேஷன் கார்டில் உள்ள "📍 Direction" பட்டனை கிளிக் செய்யவும். கூகுள் மேப்ஸ் திறக்கும்.`;
         return `You can get directions to any parking location by clicking the "📍 Direction" button on the location card. This will open Google Maps.`;
     }
 
     // ── Payment queries ──
     if (msg.includes('payment') || msg.includes('pay') || msg.includes('razorpay') || msg.includes('upi') || msg.includes('cash')) {
+        window._customSpeech = lang === 'ta' ? "நீங்கள் ரேஸர்பே, யூ பி ஐ மூலமாக ஆன்லைனில் செலுத்தலாம், அல்லது வெளியேறும்போது ரொக்கமாகவும் செலுத்தலாம்." : "You can seamlessly pay online via Razorpay or UPI, or just pay in cash at the exit gate.";
         if (lang === 'ta') return `நீங்கள் இணைய வழியில் (Razorpay/UPI) அல்லது வெளியேறும் போது ரொக்கமாக செலுத்தலாம். கட்டணம் ஒரு மணி நேரத்திற்கு ₹80.`;
         return `You can pay online via Razorpay/UPI or pay in cash at the exit gate. Rate is ₹80 per hour.`;
     }
 
     // ── Time / duration queries ──
     if (msg.includes('time') || msg.includes('hour') || msg.includes('duration') || msg.includes('long')) {
+        window._customSpeech = lang === 'ta' ? "நீங்கள் எவ்வளவு நேரம் வேண்டுமானாலும் வாகனத்தை பாதுகாப்பாக நிறுத்தலாம். கட்டணம் ஒரு மணி நேரத்திற்கு 80 ரூபாய் கணக்கிடப்படும்." : "You can park your vehicle for as long as you need. The charges are calculated at 80 rupees per hour when you exit.";
         if (lang === 'ta') return `நீங்கள் எவ்வளவு நேரம் வேண்டுமானாலும் வாகனத்தை நிறுத்தலாம். கட்டணம் ஒரு மணி நேரத்திற்கு ₹80.`;
         return `You can park for as long as you need. Charges are ₹80 per hour, calculated at exit.`;
     }
 
     // ── Help query ──
     if (msg.includes('help') || msg.includes('what can you do') || msg.includes('enna pannuva')) {
+        window._customSpeech = lang === 'ta' ? "நான் ஒரு பார்க்கிங் அசிஸ்டன்ட். காலியான இடங்களை அறிந்துகொள்ளவும், பார்க்கிங் புக் செய்யவும் நான் உங்களுக்கு உதவுவேன்." : "I am an AI parking assistant. I can help you find available slots, tell you the pricing, or guide you to book a parking spot.";
         if (lang === 'ta') {
             return `நான் இவை அனைத்திலும் உதவ முடியும்:\n• காலியான ஸ்லாட்டுகளை அறிய\n• கட்டண விவரங்கள் (₹80/மணி)\n• ஸ்லாட் பதிவு செய்ய — "book slot" என சொல்லுங்கள்\n• கட்டணம் செலுத்தும் முறைகள்\n• வரைபடம் / இருப்பிடம்`;
         }
@@ -475,11 +507,13 @@ async function getBotResponse(userMessage) {
 
     // ── Thank you ──
     if (msg.match(/\b(thank|thanks|nandri)\b/)) {
+        window._customSpeech = lang === 'ta' ? "மிக்க நன்றி! பாதுகாப்பான பயணம் அமையட்டும்." : "You are very welcome! Have a safe and wonderful day.";
         if (lang === 'ta') return `நன்றி! 🙏 வேறு ஏதேனும் உதவி தேவைப்பட்டால் கேட்கவும்.`;
         return `You're welcome! 😊 Feel free to ask if you need anything else.`;
     }
 
     // ── Default response ──
+    window._customSpeech = lang === 'ta' ? "மன்னிக்கவும், எனக்கு சரியாக புரியவில்லை. பார்க்கிங் ஸ்லாட்டுகள், அல்லது கட்டணங்கள் பற்றி நீங்கள் என்னிடம் கேட்கலாம்." : "I'm sorry, I didn't quite catch that. You can ask me about available slots, pricing, or say book a slot.";
     if (lang === 'ta') {
         return `நான் பார்க்கிங் பற்றிய தகவல்களை கூற முடியும். (காலியான ஸ்லாட்டுகள், கட்டணம் மற்றும் பதிவு செய்தல் பற்றி கேட்கவும்)`;
     }
@@ -487,14 +521,62 @@ async function getBotResponse(userMessage) {
 }
 
 
-// ─── Text-to-Speech: Speak in same language ─────────────────────────────────
+// ─── Text-to-Speech: Premium AI Voice Synthesis ─────────────────────────────
+function getBestVoice(langCode) {
+    const voices = window.speechSynthesis.getVoices();
+    if (!voices || voices.length === 0) return null;
+
+    let bestVoice = null;
+    if (langCode === 'ta') {
+        bestVoice = voices.find(v => v.lang === 'ta-IN' && (v.name.includes('Google') || v.name.includes('Premium') || v.name.includes('Neural') || v.name.includes('Natural')));
+        if (!bestVoice) bestVoice = voices.find(v => v.lang === 'ta-IN');
+        if (!bestVoice) bestVoice = voices.find(v => v.lang.startsWith('ta'));
+    } else {
+        bestVoice = voices.find(v => (v.lang === 'en-IN' || v.lang === 'en-US' || v.lang === 'en-GB') && (v.name.includes('Google') || v.name.includes('Premium') || v.name.includes('Neural') || v.name.includes('Natural') || v.name.includes('Microsoft Ana')));
+        if (!bestVoice) bestVoice = voices.find(v => v.lang === 'en-IN');
+        if (!bestVoice) bestVoice = voices.find(v => v.lang.startsWith('en'));
+    }
+    return bestVoice;
+}
+
 function speak(text) {
     window.speechSynthesis.cancel();
-    const speech = new SpeechSynthesisUtterance(text);
-    speech.lang = (window.currentLang === 'ta') ? 'ta-IN' : 'en-IN';
-    speech.rate = 1;
-    speech.pitch = 1;
+    
+    // Add natural breath pauses by replacing punctuation with a slight pause indicator
+    let processedText = text.replace(/([.!?])\s*/g, '$1, ');
+    
+    const speech = new SpeechSynthesisUtterance(processedText);
+    const isTamil = window.currentLang === 'ta';
+    speech.lang = isTamil ? 'ta-IN' : 'en-IN';
+    
+    // Natural human speaking rate and pitch
+    speech.rate = 0.92; // Slightly slower for clear, professional pronunciation
+    speech.pitch = isTamil ? 1.05 : 1.0; 
+
+    // Find the most premium AI voice available on the device
+    const bestVoice = getBestVoice(window.currentLang);
+    if (bestVoice) {
+        speech.voice = bestVoice;
+    }
+
+    // Track speaking state internally but do not force UI to display
+    speech.onstart = () => {
+        window.isSpeakingWave = true;
+    };
+    
+    const hideSpeakingUI = () => {
+        window.isSpeakingWave = false;
+    };
+    
+    speech.onend = hideSpeakingUI;
+    speech.onerror = hideSpeakingUI;
+
     window.speechSynthesis.speak(speech);
+}
+
+// Preload voices
+if (window.speechSynthesis.onvoiceschanged !== undefined) {
+    window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
 }
 
 // ─── Create Chatbot UI ──────────────────────────────────────────────────────
@@ -1306,8 +1388,27 @@ function createChatbotUI() {
     }
 }
 
+// ─── Enable Premium Microphone for Voice Enhancement ──────────────────────────
+async function enablePremiumMicrophone() {
+    try {
+        window.premiumAudioStream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+                noiseSuppression: true,
+                echoCancellation: true,
+                autoGainControl: true,
+                channelCount: 1,
+                sampleRate: 48000
+            }
+        });
+        console.log("🎤 Premium Voice Enhancement Activated");
+    } catch (e) {
+        console.log("Standard mic in use (Premium features unavailable):", e);
+    }
+}
+
 // ─── Initialize chatbot ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+    enablePremiumMicrophone();
     createChatbotUI();
     startWakeWord();
 });
@@ -1521,6 +1622,7 @@ function startCommandListening() {
 
 // ─── Siri Wave Animation System ─────────────────────────────────────────────
 window.isListeningWave = false;
+window.isSpeakingWave = false;
 let waveT = 0;
 
 function drawWave(ctx, canvas, color, amplitude, frequency, speed) {
@@ -1549,10 +1651,19 @@ function animateWave() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (window.isListeningWave) {
+        // Listening colors (Blue/Cyan/Pink)
         drawWave(ctx, canvas, "#00f2ff", 20, 0.02, 0.05);
         drawWave(ctx, canvas, "#ff00cc", 15, 0.03, 0.04);
         drawWave(ctx, canvas, "#00ff99", 10, 0.04, 0.03);
         waveT += 0.05;
+    } else if (window.isSpeakingWave) {
+        // Speaking colors (Warm Orange/Yellow/Red for distinction)
+        drawWave(ctx, canvas, "#ff6a00", 25, 0.025, 0.06);
+        drawWave(ctx, canvas, "#ee0979", 20, 0.035, 0.05);
+        drawWave(ctx, canvas, "#ff9a44", 15, 0.045, 0.04);
+        waveT += 0.08; // slightly faster for speaking
+    } else {
+        waveT = 0;
     }
 
     requestAnimationFrame(animateWave);
