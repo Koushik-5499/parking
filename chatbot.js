@@ -2,6 +2,7 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebas
 import { getFirestore, collection, getDocs, doc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 import { getAuth } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 import { launchSimulator } from './simulator.js';
+import { getGemmaResponse } from './gemma.js';
 
 const firebaseConfig = {
     apiKey: "AIzaSyBMZz7gVpJjJ2WBaTlutAYC-UnDgXDRGuE",
@@ -512,12 +513,26 @@ async function getBotResponse(userMessage) {
         return `You're welcome! 😊 Feel free to ask if you need anything else.`;
     }
 
-    // ── Default response ──
-    window._customSpeech = lang === 'ta' ? "மன்னிக்கவும், எனக்கு சரியாக புரியவில்லை. பார்க்கிங் ஸ்லாட்டுகள், அல்லது கட்டணங்கள் பற்றி நீங்கள் என்னிடம் கேட்கலாம்." : "I'm sorry, I didn't quite catch that. You can ask me about available slots, pricing, or say book a slot.";
-    if (lang === 'ta') {
-        return `நான் பார்க்கிங் பற்றிய தகவல்களை கூற முடியும். (காலியான ஸ்லாட்டுகள், கட்டணம் மற்றும் பதிவு செய்தல் பற்றி கேட்கவும்)`;
+    // ── Default fallback to Gemini API ──
+    try {
+        await fetchParkingData();
+        const mainGate = parkingData.rathinam_main_gate;
+        const gate1 = parkingData.rathinam_gate1;
+        const gate3 = parkingData.rathinam_gate3;
+        
+        const contextStr = `Current Available Slots:
+- Rathinam Main Gate: ${mainGate.available} available out of ${mainGate.total} total
+- Rathinam Gate 1: ${gate1.available} available out of ${gate1.total} total
+- Rathinam Gate 3: ${gate3.available} available out of ${gate3.total} total`;
+
+        const geminiResponse = await getGemmaResponse(userMessage, contextStr);
+        window._customSpeech = geminiResponse.replace(/<[^>]+>/g, '').replace(/[*_#]/g, ''); // strip markdown for speech
+        return geminiResponse;
+    } catch (error) {
+        console.error("Error communicating with Gemini AI:", error);
+        window._customSpeech = lang === 'ta' ? "மன்னிக்கவும், நான் தற்போது கிடைக்கவில்லை. பிறகு முயற்சிக்கவும்." : "Sorry, I am currently unavailable. Please try again later.";
+        return lang === 'ta' ? `❌ மன்னிக்கவும், AI சேவை தற்போது கிடைக்கவில்லை.` : `❌ Sorry, AI service is temporarily unavailable.`;
     }
-    return `I can help you with:\n• Checking available parking slots\n• Pricing information (₹80/hour)\n• Book a slot — say "book slot"\n• Payment options\n• Getting directions\n\nPlease ask me anything about parking!`;
 }
 
 
