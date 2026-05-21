@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FASTPARK – Smart Metropolitan Parking System</title>
+    <link rel="stylesheet" href="landing.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+</head>
+
+<body>
+    <!-- Particles Background -->
+    <canvas id="particles-canvas"></canvas>
+
+    <!-- Navigation -->
+    <nav class="navbar glassmorphism">
+        <div class="nav-container">
+            <div class="logo">
+                <img src="logo.jpg" alt="FASTPARK Logo" class="logo-img"
+                    onerror="this.src='https://via.placeholder.com/50x50?text=FP'">
+                <span class="gradient-text">FASTPARK</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#innovation">Innovation</a></li>
+                <li><a href="#workflow">Workflow</a></li>
+                <li><a href="#team">Team</a></li>
+                <li><a href="https://www.fastpark.online/" target="_blank" class="nav-btn glow-btn">fastpark.online</a>
+                </li>
+            </ul>
+            <div class="hamburger">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title animate-up">
+                FASTPARK<br>
+                <span class="gradient-text">Smart Metropolitan<br>Parking System</span>
+            </h1>
+            <p class="hero-subtitle animate-up delay-1">
+                India’s intelligent voice-enabled real-time parking management platform.
+            </p>
+            <div class="hero-buttons animate-up delay-2">
+                <a href="#innovation" class="glow-btn primary-btn">Explore Innovation</a>
+                <a href="#features" class="glow-btn secondary-btn">View Features</a>
+            </div>
+        </div>
+        <div class="hero-visual animate-up delay-3">
+            <div class="floating-dashboard">
+                <div class="dash-card">
+                    <i class="fas fa-robot" style="color: var(--neon)"></i>
+                    <h3><span class="stat-num">0</span>%</h3>
+                    <p>Voice AI Accuracy</p>
+                </div>
+                <div class="dash-card">
+                    <i class="fas fa-mask" style="color: var(--primary)"></i>
+                    <h3>VIP</h3>
+                    <p>Ghost Slots</p>
+                </div>
+                <div class="dash-card">
+                    <i class="fas fa-bolt" style="color: var(--neon)"></i>
+                    <h3>&lt;<span class="stat-num">0</span>s</h3>
+                    <p>QR Auto-Billing</p>
+                </div>
+                <div class="dash-card">
+                    <i class="fas fa-map-marked-alt" style="color: var(--primary)"></i>
+                    <h3>Live</h3>
+                    <p>Map Routing</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="about section-padding">
+        <div class="section-header">
+            <h2 class="gradient-text">About FASTPARK</h2>
+            <p>Redefining urban mobility through intelligent infrastructure</p>
+        </div>
+        <div class="about-container glass-panel">
+            <div class="about-text">
+                <p>FASTPARK is a state-of-the-art real-time smart parking system designed to eliminate the friction of
+                    modern metropolitan parking. By combining cutting-edge software with intuitive user experiences, we
+                    provide a seamless journey from reservation to departure.</p>
+                <ul class="about-list">
+                    <li><i class="fas fa-qrcode text-cyan"></i> QR-based booking & seamless entry/exit</li>
+                    <li><i class="fas fa-microphone text-neon"></i> Intelligent Voice Assistant for hands-free operation
+                    </li>
+                    <li><i class="fas fa-file-invoice-dollar text-cyan"></i> Automated billing with integrated UPI
+                        payments</li>
+                    <li><i class="fas fa-database text-neon"></i> Scalable Firebase backend for ultra-low latency</li>
+                    <li><i class="fas fa-chart-line text-cyan"></i> Live slot monitoring & dynamic allocation</li>
+                </ul>
+            </div>
+            <div class="about-visual">
+                <div class="tech-ring">
+                    <div class="core-icon"><i class="fas fa-car-side"></i></div>
+                    <div class="orbit-icons">
+                        <i class="fab fa-google" style="--i:1;"></i>
+                        <i class="fas fa-bolt" style="--i:2;"></i>
+                        <i class="fas fa-qrcode" style="--i:3;"></i>
+                        <i class="fas fa-wallet" style="--i:4;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features section-padding">
+        <div class="section-header">
+            <h2 class="gradient-text">Core Features</h2>
+            <p>Powerful tools engineered for a frictionless experience</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card glass-panel">
+                <i class="fas fa-qrcode"></i>
+                <h3>QR Entry/Exit</h3>
+                <p>Lightning-fast contactless access control using dynamically generated encrypted QR codes.</p>
+            </div>
+            <div class="feature-card glass-panel">
+                <i class="fas fa-microphone-alt"></i>
+                <h3>Voice Assistant "Hey Dude"</h3>
+                <p>Interactive NLP-powered voice companion that guides users through the booking process.</p>
+            </div>
+            <div class="feature-card glass-panel">
+                <i class="fas fa-map-marked-alt"></i>
+                <h3>Live Slot Tracking</h3>
+                <p>Millisecond-precision real-time visual map of available, occupied, and reserved slots.</p>
+            </div>
+            <div class="feature-card glass-panel">
+                <i class="fas fa-receipt"></i>
+                <h3>Auto Billing</h3>
+                <p>Zero-click automated fare calculation based on exact entry and exit timestamps.</p>
+            </div>
+            <div class="feature-card glass-panel">
+                <i class="fas fa-user-secret"></i>
+                <h3>VIP Hidden Slots</h3>
+                <p>Exclusive concealed parking bays reserved for high-priority guests and administration.</p>
+            </div>
+            <div class="feature-card glass-panel">
+                <i class="fas fa-route"></i>
+                <h3>Google Maps Integration</h3>
+                <p>Seamless one-tap navigation routing directly to the assigned parking facility.</p>
+            </div>
+            <div class="feature-card glass-panel">
+                <i class="fas fa-chart-pie"></i>
+                <h3>Admin Analytics Dashboard</h3>
+                <p>Comprehensive data visualization center for monitoring revenue, occupancy, and traffic.</p>
+            </div>
+            <div class="feature-card glass-panel">
+                <i class="fas fa-file-excel"></i>
+                <h3>Excel Export</h3>
+                <p>One-click automated generation of detailed operational and financial reports.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Innovation Section -->
+    <section id="innovation" class="innovation section-padding">
+        <div class="section-header">
+            <h2 class="gradient-text">Innovation Showcase</h2>
+            <p>Pushing the boundaries of parking technology</p>
+        </div>
+        <div class="innovation-container">
+            <div class="innovation-item glass-panel">
+                <div class="inno-icon"><i class="fas fa-comment-dots"></i></div>
+                <div class="inno-content">
+                    <h3>Voice Activated Parking Assistant</h3>
+                    <p>The industry's first fully conversational AI agent that can handle complex booking queries, check
+                        availability, and guide users using natural language processing.</p>
+                </div>
+            </div>
+            <div class="innovation-item glass-panel reverse">
+                <div class="inno-content">
+                    <h3>Dual Role Dashboard</h3>
+                    <p>A unified architecture that seamlessly morphs between a consumer-facing booking portal and a
+                        high-density administrative command center based on user credentials.</p>
+                </div>
+                <div class="inno-icon"><i class="fas fa-exchange-alt"></i></div>
+            </div>
+            <div class="innovation-item glass-panel">
+                <div class="inno-icon"><i class="fas fa-bolt"></i></div>
+                <div class="inno-content">
+                    <h3>QR Triggered Billing</h3>
+                    <p>Proprietary algorithm that instantly finalizes transactions and dispatches digital receipts the
+                        moment a vehicle's exit QR code is authenticated by the scanner.</p>
+                </div>
+            </div>
+            <div class="innovation-item glass-panel reverse">
+                <div class="inno-content">
+                    <h3>Ghost VIP Slots</h3>
+                    <p>A stealth allocation system that dynamically hides or reveals premium parking inventory based on
+                        dynamic authorization levels and real-time demand.</p>
+                </div>
+                <div class="inno-icon"><i class="fas fa-mask"></i></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Workflow Section -->
+    <section id="workflow" class="workflow section-padding">
+        <div class="section-header">
+            <h2 class="gradient-text">Seamless Workflow</h2>
+            <p>From arrival to departure in seconds</p>
+        </div>
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content glass-panel">
+                    <h3>1. Login</h3>
+                    <p>Secure authentication via email or phone.</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content glass-panel">
+                    <h3>2. View Slots</h3>
+                    <p>Interactive real-time map of the parking facility.</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content glass-panel">
+                    <h3>3. Book Slot</h3>
+                    <p>Select time and confirm reservation instantly.</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content glass-panel">
+                    <h3>4. QR Generation</h3>
+                    <p>Unique encrypted access code created.</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content glass-panel">
+                    <h3>5. Entry Scan</h3>
+                    <p>Contactless boom barrier activation upon arrival.</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content glass-panel">
+                    <h3>6. Exit Scan</h3>
+                    <p>System registers departure and calculates time.</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content glass-panel">
+                    <h3>7. Payment Receipt</h3>
+                    <p>Auto-billing via UPI and email invoice dispatch.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Admin Dashboard Preview -->
+    <section class="admin-preview section-padding">
+        <div class="section-header">
+            <h2 class="gradient-text">Command Center</h2>
+            <p>Advanced administrative analytics and controls</p>
+        </div>
+        <div class="dashboard-mockup glass-panel">
+            <div class="mockup-header">
+                <div class="dots"><span></span><span></span><span></span></div>
+                <div class="title">admin.fastpark.com</div>
+            </div>
+            <div class="mockup-body">
+                <div class="mockup-sidebar">
+                    <div class="line"></div>
+                    <div class="line"></div>
+                    <div class="line"></div>
+                    <div class="line"></div>
+                </div>
+                <div class="mockup-content">
+                    <div class="mockup-stats">
+                        <div class="m-stat"></div>
+                        <div class="m-stat"></div>
+                        <div class="m-stat"></div>
+                        <div class="m-stat"></div>
+                    </div>
+                    <div class="mockup-chart"></div>
+                    <div class="mockup-table">
+                        <div class="t-row header"></div>
+                        <div class="t-row"></div>
+                        <div class="t-row"></div>
+                        <div class="t-row"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Technology Stack -->
+    <section class="tech-stack section-padding">
+        <div class="section-header">
+            <h2 class="gradient-text">Technology Stack</h2>
+            <p>Built with modern, scalable, and robust frameworks</p>
+        </div>
+        <div class="tech-grid">
+            <div class="tech-item"><i class="fab fa-html5"></i><span>HTML5</span></div>
+            <div class="tech-item"><i class="fab fa-css3-alt"></i><span>CSS3</span></div>
+            <div class="tech-item"><i class="fab fa-js"></i><span>JavaScript</span></div>
+            <div class="tech-item"><i class="fas fa-fire"></i><span>Firebase</span></div>
+            <div class="tech-item"><i class="fab fa-github"></i><span>GitHub</span></div>
+            <div class="tech-item"><i class="fas fa-caret-up"></i><span>Vercel</span></div>
+            <div class="tech-item"><i class="fas fa-envelope"></i><span>Resend</span></div>
+            <div class="tech-item"><i class="fas fa-globe"></i><span>GoDaddy</span></div>
+            <div class="tech-item"><i class="fab fa-google"></i><span>Search Console</span></div>
+            <div class="tech-item"><i class="fas fa-qrcode"></i><span>QRCode.js</span></div>
+            <div class="tech-item"><i class="fas fa-microphone"></i><span>Web Speech API</span></div>
+        </div>
+    </section>
+
+    <!-- Team Section -->
+    <section id="team" class="team section-padding">
+        <div class="section-header">
+            <h2 class="gradient-text">Meet The Innovators</h2>
+            <p>The minds behind FASTPARK</p>
+        </div>
+
+        <div class="team-grid">
+            <!-- Team Leader -->
+            <div class="team-card glass-panel leader">
+                <div class="img-wrapper">
+                    <img src="team pics/koushik.jpeg" alt="Koushik S"
+                        onerror="this.src='https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80'">
+                </div>
+                <h3>KOUSHIK S</h3>
+                <p class="role text-neon">Team Lead & Full Stack Engineer</p>
+            </div>
+
+            <!-- Team Members -->
+            <div class="team-card glass-panel">
+                <div class="img-wrapper">
+                    <img src="team pics/maha sri.jpeg" alt="Maha Sri R"
+                        onerror="this.src='https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80'">
+                </div>
+                <h3>MAHA SRI R</h3>
+                <p class="role text-cyan">UI/UX Designer & Frontend Developer</p>
+            </div>
+            <div class="team-card glass-panel">
+                <div class="img-wrapper">
+                    <img src="team pics/gayathri E.jpeg" alt="Gayathri E"
+                        onerror="this.src='https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80'">
+                </div>
+                <h3>GAYATHRI E</h3>
+                <p class="role text-cyan">Backend Developer & Firebase Integration</p>
+            </div>
+            <div class="team-card glass-panel">
+                <div class="img-wrapper">
+                    <img src="team pics/kavya.jpeg" alt="Kavya M"
+                        onerror="this.src='https://images.unsplash.com/photo-1527980965255-d3b416303d12?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80'">
+                </div>
+                <h3>KAVYA M</h3>
+                <p class="role text-cyan">Documentation & Research Lead</p>
+            </div>
+            <div class="team-card glass-panel">
+                <div class="img-wrapper">
+                    <img src="team pics/Khaarthekheyan.jpeg" alt="Khaarthekheyan S"
+                        onerror="this.src='https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80'">
+                </div>
+                <h3>KHAARTHEKHEYAN S</h3>
+                <p class="role text-cyan">Testing & Quality Assurance Engineer</p>
+            </div>
+            <div class="team-card glass-panel">
+                <div class="img-wrapper">
+                    <img src="team pics/gokul ashwin.jpeg" alt="Gokul Aswin M"
+                        onerror="this.src='https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80'">
+                </div>
+                <h3>GOKUL ASWIN M</h3>
+                <p class="role text-cyan">Deployment & DevOps Engineer</p>
+            </div>
+        </div>
+
+        <!-- Mentor -->
+        <div class="mentor-section">
+            <h3 class="mentor-title">Under the Guidance of</h3>
+            <div class="team-card glass-panel mentor-card">
+                <div class="img-wrapper">
+                    <img src="team pics/ANJITHA mam.jpeg" alt="ANJITHA N K"
+                        onerror="this.src='https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80'">
+                </div>
+                <h3>ANJITHA N K</h3>
+                <p class="role text-neon">Teaching Assistant Experiential Learning</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Magazine Download -->
+    <section class="download-section section-padding">
+        <div class="glass-panel download-box">
+            <div class="download-content">
+                <h2>FASTPARK Magazine</h2>
+                <p>Dive deep into our architecture, algorithms, and development journey.</p>
+                <a href="FastPark_Magazine.pdf.pdf" download="FastPark_Magazine.pdf"
+                    class="glow-btn primary-btn download-btn">
+                    <i class="fas fa-file-pdf"></i> Download PDF
+                </a>
+            </div>
+            <div class="download-icon">
+                <i class="fas fa-book-open"></i>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="glass-panel">
+        <div class="footer-content">
+            <div class="footer-logo">
+                <img src="logo.jpg" alt="FASTPARK" class="logo-img"
+                    onerror="this.src='https://via.placeholder.com/50x50?text=FP'">
+                <span class="gradient-text">FASTPARK</span>
+            </div>
+            <div class="footer-links">
+                <a href="#about">About</a>
+                <a href="#features">Features</a>
+                <a href="#team">Team</a>
+                <a href="mailto:contact@fastpark.com">Contact</a>
+            </div>
+            <div class="social-links">
+                <a href="#"><i class="fab fa-github"></i></a>
+                <a href="#"><i class="fab fa-linkedin"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 FASTPARK. All rights reserved. Smart Metropolitan Parking System.</p>
+        </div>
+    </footer>
+
+    <script src="landing.js"></script>
+</body>
+
+</html>
