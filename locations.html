@@ -66,6 +66,32 @@
             font-weight: 600;
         }
 
+        .about-btn {
+            position: absolute;
+            top: 40px;
+            right: 25px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+            z-index: 1000;
+        }
+
+        .about-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
+        }
+
         .title {
             text-align: center;
             color: white;
@@ -623,6 +649,9 @@
 </head>
 
 <body>
+    <a href="web/landing.html" class="about-btn">
+        <i class="fas fa-info-circle"></i> About Us
+    </a>
     <div class="container">
         <!-- ===== SLOTS SECTION (Default) ===== -->
         <div id="slots-section" class="dashboard-section active">
