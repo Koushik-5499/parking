@@ -1,120 +1,150 @@
-# FASTPARK – AI Powered Smart Parking System 🚗⚡
+# 🚗 Smart Parking System
 
-FASTPARK is an AI-driven Smart Parking Management System developed to solve urban parking problems using modern web technologies, real-time slot monitoring, AI voice assistance, QR-based parking access, and automated billing. The system provides users with a seamless parking experience through intelligent parking slot management and futuristic smart city features.
+A full-stack Smart Parking Web Application that allows users to book parking slots, generate QR codes for entry, and manage parking efficiently with real-time updates.
 
-## 🌟 Features
+---
 
-* Real-time parking slot availability detection
-* AI-powered smart parking assistant
-* Voice-enabled chatbot with Tamil, English, and Hindi support
-* QR-based vehicle entry and exit system
-* Automated parking billing system (₹80/hour)
-* Parking slot reservation with timer and cooldown
-* VIP/Admin reserved parking slots
-* Google Maps navigation integration
-* Parking history and digital receipts
-* Payment integration with QR support
-* Excel export for parking reports
-* Smart parking simulator game integrated inside chatbot
-* Mobile responsive futuristic UI
-* Secure Firebase authentication system
-* Admin and Customer login system
-* AI chatbot with microphone voice input and output
-* Vercel cloud deployment support
+## 🌐 Live Demo
 
-## 🧠 AI Features
+👉 https://fastpark.online
 
-FASTPARK integrates AI technologies to improve user interaction and parking management.
+---
 
-### AI Assistant Capabilities
+## 📌 Features
 
-* Human-like conversational chatbot
-* Voice input and voice output support
-* Multilingual AI responses
-* Smart parking guidance
-* Billing explanations
-* Parking slot recommendations
-* Real-time user assistance
+### 👤 User Features
 
-### AI Technologies Used
+* User Registration & Login (Firebase Authentication)
+* View available parking slots in real-time
+* Book parking slots with time-based pricing (₹80/hour)
+* Automatic booking expiration (30 min reservation + 5 min cooldown)
+* QR Code generation for entry/exit
+* View booking history and receipts
+* Email confirmation with QR code
 
-* OpenAI API
-* Speech-to-Text AI
-* Text-to-Speech AI
-* AI Conversational Assistant
+---
 
-## 🛠️ Technologies Used
+### 🛠️ Admin Features
+
+* View all bookings
+* Filter bookings by location and status
+* Monitor slot availability
+* Revenue tracking (daily summary)
+
+---
+
+### 🔐 Security Features
+
+* QR Code scanning system for entry validation
+* Prevent duplicate or invalid entries
+* Real-time slot status updates
+
+---
+
+## 🧠 Technologies Used
 
 ### Frontend
 
-* HTML5
-* CSS3
+* HTML
+* CSS
 * JavaScript
 
-### Backend & Database
+### Backend & Services
 
-* Firebase Authentication
-* Firebase Realtime Database / Firestore
+* Firebase (Authentication + Firestore Database)
+* Vercel (Hosting + Serverless Functions)
+* Resend (Email Service)
 
-### AI & APIs
+### Tools
 
-* OpenAI API
-* Google Maps API
-* QR Code Integration
+* GitHub (Version Control)
+* Antigravity
+* Vercel Analytics & Speed Insights
+* Google Search Console
 
-### Deployment
+---
 
-* Vercel Hosting
+## 📁 Project Structure
 
-## 🚀 Project Modules
+```
+Parking/
+│
+├── api/
+│   └── send-email.js
+│
+├── index.html
+├── signup.html
+├── booking.html
+├── locations.html
+├── slots-dashboard.html
+├── ticket.html
+│
+├── firebase-config.js
+├── locations-script.js
+├── booking-script.js
+├── slots-dashboard-script.js
+├── ticket-script.js
+├── security-script.js
+│
+├── parking-styles.css
+├── logo.jpg
+│
+├── vercel.json
+├── package.json
+├── package-lock.json
+└── README.md
+```
 
-### User Module
+---
 
-* Register/Login
-* Select parking location
-* Book parking slots
-* Voice AI assistance
-* View booking history
-* Online payment support
+## ⚙️ How It Works
 
-### Admin Module
+1. User logs in using Firebase Authentication
+2. Selects parking location and views available slots
+3. Books a slot → system generates a unique booking ID
+4. QR Code is generated for entry
+5. Security scans QR → verifies booking → allows entry
+6. System updates slot status in real-time
+7. Email receipt is sent to user
 
-* Monitor parking slots
-* Manage reservations
-* View reports
-* Export parking data
-* Manage VIP slots
+---
 
-## 🎮 Smart Parking Simulator
+## 🚀 Deployment
 
-FASTPARK includes an interactive parking simulator game integrated inside the AI chatbot to improve user engagement and demonstrate parking concepts in a fun and futuristic way.
+This project is deployed using **Vercel**.
 
-## 🔐 Security
+To deploy:
 
-* Secure authentication system
-* Protected API key handling using Vercel Environment Variables
-* QR-based access control
-* Backend API integration security
+1. Push code to GitHub
+2. Import project in Vercel
+3. Configure environment variables
+4. Deploy
 
-## 🌍 Future Enhancements
+---
 
-* AI camera-based parking detection
-* Number plate recognition system
-* Face recognition entry
-* EV charging station management
-* AI traffic prediction
-* Smart emergency parking allocation
-* AI-powered security monitoring
+## 📊 Pricing Logic
 
-## 📸 Project Preview
+* ₹80 per hour
+* Automatic calculation based on entry & exit time
 
-FASTPARK provides a futuristic cyberpunk-inspired smart parking experience with AI-driven automation, glowing modern UI, and intelligent parking assistance.
+---
 
-## 👨‍💻 Developer
+## 🔮 Future Improvements
 
-Developed by Koushik Senthil
+* Mobile app integration
+* Payment gateway (Razorpay / UPI auto verification)
+* AI-based slot prediction
+* License plate recognition
+
+---
+
+## 👨‍💻 Author
+
+**Koushik**
 CSE Student – Rathinam Technical Campus
 
-## 📌 Conclusion
+---
 
-FASTPARK is designed to modernize urban parking systems using Artificial Intelligence, automation, and smart city technologies. The project combines real-time parking management, AI communication, voice interaction, and smart automation into one integrated futuristic platform.
+## 📜 License
+
+This project is for educational purposes.
