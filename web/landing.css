@@ -809,6 +809,27 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 8rem;
     color: rgba(0, 210, 255, 0.2);
 }
+/* LinkedIn Posts */
+.linkedin-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 30px;
+}
+
+.linkedin-card {
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.linkedin-card iframe {
+    width: 100%;
+    max-width: 504px;
+    border-radius: 10px;
+    background: transparent;
+}
 
 /* Footer */
 footer {
