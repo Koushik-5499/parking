@@ -183,13 +183,14 @@ window.dismissExpiryNotification = function () {
     if (notif) notif.classList.remove('show');
 };
 
-function startBookingTimer(bookingTime) {
+function startBookingTimer(activeBooking) {
     clearBookingTimer();
     expiryNotifShown = false;
     const RESERVATION_DURATION = 1800000; // 30 minutes
     const WARNING_THRESHOLD = 300000; // 5 minutes
+    const bookingTime = activeBooking.bookingTime;
 
-    function updateTimer() {
+    async function updateTimer() {
         const now = Date.now();
         const elapsed = now - bookingTime;
         const remaining = RESERVATION_DURATION - elapsed;
@@ -208,6 +209,40 @@ function startBookingTimer(bookingTime) {
             progressEl.classList.add('low');
             clearBookingTimer();
             showExpiryNotification(0);
+
+            // Auto-cancel booking in database
+            try {
+                const slotRef = doc(db, 'parking_locations', activeBooking.locationId, 'slots', activeBooking.id);
+                await updateDoc(slotRef, {
+                    status: 'available',
+                    bookedBy: null,
+                    userEmail: null,
+                    vehicleNumber: null,
+                    bookingTime: null,
+                    qrCode: null,
+                    bookingId: null,
+                    phone: null,
+                    vehicleType: null,
+                    price: null
+                });
+
+                // Also update local storage cooldown
+                const myBookings = JSON.parse(localStorage.getItem('myBookings') || '{}');
+                const myBookingKey = activeBooking.locationId + '_' + activeBooking.id;
+                const b = myBookings[myBookingKey];
+                if (b && b.bookingTime) {
+                    const penaltyEnd = b.bookingTime + 1800000 + 300000;
+                    if (Date.now() < penaltyEnd) {
+                        localStorage.setItem('bookingCooldownUntil', penaltyEnd);
+                    }
+                }
+                delete myBookings[myBookingKey];
+                localStorage.setItem('myBookings', JSON.stringify(myBookings));
+
+            } catch (err) {
+                console.error('Error auto-cancelling booking:', err);
+            }
+
             // Refresh booking after expiry
             setTimeout(() => loadMyActiveBooking(), 2000);
             return;
@@ -427,7 +462,7 @@ function renderActiveBooking(activeBooking) {
     }, 100);
 
     if (activeBooking.status === 'pending' && activeBooking.bookingTime) {
-        setTimeout(() => startBookingTimer(activeBooking.bookingTime), 150);
+        setTimeout(() => startBookingTimer(activeBooking), 150);
     }
 
     if (activeBooking.bookingId) {
